@@ -11,6 +11,7 @@ import { getEvaluatedOrderBy, initiateCallback, securityService } from '../../ut
 import { getAccessToken, performAuthorization, removeAccessToken } from '../../util/oAuth.utils';
 import { AdvancedOptions } from '../../advanced-options';
 import { PaginationUtils } from '../../util/variable/pagination.utils';
+import { VariableEvents } from "../../model/base-variable";
 
 import _ from "lodash";
 
@@ -144,7 +145,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         }
         // ToDo - variable seperation
         // $invokeWatchers(true);
-        variable.onDataUpdated();
+        variable.notify(VariableEvents.AFTER_INVOKE, [this, dataSet]);
         setTimeout(() => {
             // EVENT: ON_SUCCESS
             initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, dataSet, advancedOptions);

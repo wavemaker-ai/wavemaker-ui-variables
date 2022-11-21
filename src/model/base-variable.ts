@@ -8,8 +8,13 @@ import {
     setValueToNode
 } from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
+import EventNotifier from "../types/event-notifier";
 declare const _: any;
-export abstract class BaseVariable {
+export enum VariableEvents {
+    BEFORE_INVOKE = 'beforeInvoke',
+    AFTER_INVOKE = 'afterInvoke'
+};
+export abstract class BaseVariable extends EventNotifier{
 
     protected _id: string;
 
