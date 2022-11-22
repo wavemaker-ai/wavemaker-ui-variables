@@ -1,4 +1,4 @@
-export default class EventNotifier {
+export class DefaultEventNotifier implements EventNotifier {
     private listeners = {} as any;
 
     public notify(event: string, args: any[]) {
@@ -18,4 +18,9 @@ export default class EventNotifier {
             eventListeners.splice(i, 1);
         };
     }
+}
+
+export interface EventNotifier {
+    notify: (event: string, args: any[]) => void;
+    subscribe: (event: string, fn: Function) => Function;
 }
