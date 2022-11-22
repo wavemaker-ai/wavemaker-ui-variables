@@ -9,6 +9,7 @@ import { $queue } from '../../util/inflight-queue';
 import { $rootScope, CONSTANTS, VARIABLE_CONSTANTS, DB_CONSTANTS } from '../../constants/variables.constants';
 import { AdvancedOptions } from '../../advanced-options';
 import { generateConnectionParams } from '../../util/variable/live-variable.http.utils';
+import { VariableEvents } from "../../model/base-variable";
 
 declare const _, window;
 const emptyArr = [];
@@ -244,7 +245,7 @@ export class LiveVariableManager extends BaseVariableManager {
                     // watchers should get triggered before calling onSuccess event.
                     // so that any variable/widget depending on this variable's data is updated
                     // ToDo - variable seperation
-                    initiateCallback('onDataUpdated', variable, '');
+                    variable.notify(VariableEvents.AFTER_INVOKE, [this, dataObj.data]);
                   //  $invokeWatchers(true);
                     setTimeout(() => {
                         // if callback function is provided, send the data to the callback
@@ -549,6 +550,7 @@ export class LiveVariableManager extends BaseVariableManager {
             // watchers should get triggered before calling onSuccess event.
             // so that any variable/widget depending on this variable's data is updated
             // ToDo - variable seperation
+            variable.notify(VariableEvents.AFTER_INVOKE, [this, response])
            // $invokeWatchers(true);
             setTimeout(() => {
                 // EVENT: ON_SUCCESS

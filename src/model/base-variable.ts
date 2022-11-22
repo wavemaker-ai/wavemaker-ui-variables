@@ -8,8 +8,13 @@ import {
     setValueToNode
 } from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
+import { EventNotifier, DefaultEventNotifier } from "../types/event-notifier";
 declare const _: any;
-export abstract class BaseVariable {
+export enum VariableEvents {
+    BEFORE_INVOKE = 'beforeInvoke',
+    AFTER_INVOKE = 'afterInvoke'
+};
+export abstract class BaseVariable implements EventNotifier {
 
     protected _id: string;
 
@@ -23,6 +28,15 @@ export abstract class BaseVariable {
     isMuted = false;
     params;
     paramProvider;
+    private eventNotifier = new DefaultEventNotifier();
+
+    notify (event: string, args: any[]) {
+        this.eventNotifier.notify(event, args);
+    }
+
+    subscribe (event: string, fn: Function) {
+        return this.eventNotifier.subscribe(event, fn);
+    }
 
     execute(operation: any, options: any) {
         let returnVal;
