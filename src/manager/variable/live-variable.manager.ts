@@ -244,9 +244,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
                     // watchers should get triggered before calling onSuccess event.
                     // so that any variable/widget depending on this variable's data is updated
-                    // ToDo - variable seperation
                     variable.notify(VariableEvents.AFTER_INVOKE, [this, dataObj.data]);
-                  //  $invokeWatchers(true);
                     setTimeout(() => {
                         // if callback function is provided, send the data to the callback
                         triggerFn(success, dataObj.data, variable.propertiesMap, dataObj.pagination);
@@ -538,8 +536,6 @@ export class LiveVariableManager extends BaseVariableManager {
             if (variable.operation !== 'read') {
                 // EVENT: ON_PREPARESETDATA
                 const newDataSet = initiateCallback(VARIABLE_CONSTANTS.EVENT.PREPARE_SETDATA, variable, response, advancedOptions);
-                // ToDo - variable seperation
-                // @ts-ignore
                 if (newDataSet) {
                     // setting newDataSet as the response to service variable onPrepareSetData
                     response = newDataSet;
@@ -549,9 +545,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
             // watchers should get triggered before calling onSuccess event.
             // so that any variable/widget depending on this variable's data is updated
-            // ToDo - variable seperation
             variable.notify(VariableEvents.AFTER_INVOKE, [this, response])
-           // $invokeWatchers(true);
             setTimeout(() => {
                 // EVENT: ON_SUCCESS
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, response, advancedOptions);

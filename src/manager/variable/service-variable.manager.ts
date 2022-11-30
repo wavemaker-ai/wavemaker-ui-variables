@@ -143,8 +143,6 @@ export class ServiceVariableManager extends BaseVariableManager {
                 });
             }
         }
-        // ToDo - variable seperation
-        // $invokeWatchers(true);
         variable.notify(VariableEvents.AFTER_INVOKE, [this, dataSet]);
         setTimeout(() => {
             // EVENT: ON_SUCCESS

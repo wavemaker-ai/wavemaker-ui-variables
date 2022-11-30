@@ -3,7 +3,7 @@ import { extractType, isDefined, isDateTimeType, getBlob, replace } from "../../
 import { $rootScope, CONSTANTS, SWAGGER_CONSTANTS, VARIABLE_CONSTANTS, WS_CONSTANTS } from '../../constants/variables.constants';
 import { isFileUploadSupported } from './variables.utils';
 import { getAccessToken } from './../oAuth.utils';
-// import { formatDate } from '../../util/variable/variables.utils';
+import { formatDate} from "./variables.utils";
 import { PaginationUtils } from '../../util/variable/pagination.utils';
 
 // declare const _: any;
@@ -73,8 +73,7 @@ const processRequestBody = (inputData, params) => {
         paramValue = _.get(inputData, param.name);
         if (!_.isUndefined(paramValue) && paramValue !== '' && paramValue !== null && !param.readOnly) {
             // ToDo - variable seperation
-            // paramValue = isDateTimeType(param.type) ? formatDate(paramValue, param.type) : paramValue;
-            paramValue = paramValue;
+            paramValue = isDateTimeType(param.type) ? formatDate(paramValue, param.type) : paramValue;
             // Construct ',' separated string if param is not array type but value is an array
             if (_.isArray(paramValue) && _.toLower(extractType(param.type)) === 'string') {
                 paramValue = _.join(paramValue, ',');
@@ -262,7 +261,7 @@ export class ServiceVariableUtils {
                 // Format dateTime params for dataService variables
                 if (variable.serviceType === VARIABLE_CONSTANTS.SERVICE_TYPE.DATA && isDateTimeType(param.type)) {
                     // ToDo - variable seperation
-                    // paramValue = formatDate(paramValue, param.type);
+                    paramValue = formatDate(paramValue, param.type);
                 }
                 // Construct ',' separated string if param is not array type but value is an array
                 if (_.isArray(paramValue) && _.toLower(extractType(param.type)) === 'string' && variable.serviceType === VARIABLE_CONSTANTS.SERVICE_TYPE.DATA) {

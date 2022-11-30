@@ -1,6 +1,6 @@
 import { hasCordova, getClonedObject, isDateTimeType, isDefined, replace, triggerFn, isNumberType } from "../../util/utils";
 import { $rootScope, DB_CONSTANTS, SWAGGER_CONSTANTS } from '../../constants/variables.constants';
-import { getEvaluatedOrderBy } from './variables.utils';
+import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
 declare const _, moment;
 
@@ -238,7 +238,7 @@ export class LiveVariableUtils {
                     case 'datetime':
                     case 'timestamp':
                         // ToDo - variable seperation
-                        // fieldValue = formatDate(fieldValue, fieldType);
+                        fieldValue = formatDate(fieldValue, fieldType);
                         filterCondition = filterCondition ? LiveVariableUtils.getFilterCondition(filterCondition) : matchModes['exact'];
                         break;
                     case 'text':
