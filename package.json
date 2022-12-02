@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@metrichor/jmespath": "^0.3.1",
+    "fs-extra": "^11.1.0",
     "lodash": "^4.17.21",
     "x2js": "^3.4.3"
   }
