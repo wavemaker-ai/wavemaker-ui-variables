@@ -3,6 +3,7 @@ const fs = require('fs');
 const yargs = require('yargs');
 const argv = yargs(process.argv).argv;
 
+
 /**
  * To add the app-ng-runtime package as dependency in angular app package.json
  * @param {*} wm_pkg_name  ng runtime pm package name @wavemaker/app-ng-runtime
