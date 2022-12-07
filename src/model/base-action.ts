@@ -32,21 +32,6 @@ export abstract class BaseAction {
         return returnVal;
     }
 
-    // invokeOnParamChange(obj, newVal, oldVal) {
-    //     const key = obj.target;
-    //     if ((newVal === oldVal && _.isUndefined(newVal)) || (_.isUndefined(newVal) && (!_.isUndefined(oldVal)))) {
-    //         return;
-    //     }
-    //     if (!_.isEqual(oldVal, newVal)) {
-    //         //  return this.invoke(latest);
-    //         console.log('updated databinding');
-    //             this.dataBinding[key] = newVal;
-    //             // this['invoke']();
-    //             processVariablePostBindUpdate(key, newVal, obj.type, this);
-    //     }
-    //     return Promise.resolve(this);
-    // }
-
     invokeOnParamChange(obj, newVal, oldVal) {
         const target = obj.target,
             root = getTarget(this),
