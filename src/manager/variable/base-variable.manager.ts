@@ -14,12 +14,12 @@ export abstract class BaseVariableManager {
 
     notifyInflight(variable: any, status: boolean, data?: any, options?: any) {
         // ToDo - variable seperation
-        // appManager.notify('toggle-variable-state', {
-        //     variable: variable,
-        //     active: status,
-        //     data: data,
-        //     options: options
-        // });
+        appManager.notify('toggle-variable-state', {
+            variable: variable,
+            active: status,
+            data: data,
+            options: options
+        });
     }
 
     /**
