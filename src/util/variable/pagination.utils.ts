@@ -1,6 +1,7 @@
 import { jmespath } from '@metrichor/jmespath';
 
-declare const _: any;
+// declare const _: any;
+import _ from 'lodash';
 
 export class PaginationUtils {
     /**

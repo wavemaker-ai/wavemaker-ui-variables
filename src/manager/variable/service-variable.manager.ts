@@ -164,7 +164,7 @@ export class ServiceVariableManager extends BaseVariableManager {
     }
 
     protected uploadFileInFormData(variable: ServiceVariable, options: any, success: Function, error: Function, file, requestParams) {
-        const promise = upload(file, requestParams.data, {
+        const promise = upload(file, variable.httpService, requestParams.data, {
             fileParamName: 'files',
             url: requestParams.url
         });
