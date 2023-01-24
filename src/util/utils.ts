@@ -1,4 +1,6 @@
-declare const X2JS: any;
+// declare const X2JS: any;
+// @ts-ignore
+import X2JS from 'x2js';
 import _ from 'lodash';
 export const DataType = {
     INTEGER : 'integer',
