@@ -17,7 +17,6 @@ export class ModelVariable extends BaseVariable implements IDataSource {
 
     constructor(variable: any) {
         super();
-        console.log(variable);
         Object.assign(this as any, variable);
     }
 
