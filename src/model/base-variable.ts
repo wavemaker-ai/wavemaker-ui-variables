@@ -194,4 +194,8 @@ export abstract class BaseVariable implements EventNotifier {
     unmute() {
         this.isMuted = false;
     }
+
+    destroy() {
+        
+    }
 }
