@@ -1,0 +1,32 @@
+#IDE specific
+*.iml
+*.ipr
+*.iws
+*.log
+*.project
+*.classpath
+.settings/
+.ant-targets-build.xml
+.gitignore~
+.idea/*
+.metadata/
+
+## generic files to ignore
+*~
+*.#
+*.lock
+*.swp
+*- Copy.props
+*.out
+*.bak
+
+_dist/
+dist/
+node_modules/
+target/
+
+buildNumber.properties
+
+# System Files
+.DS_Store
+Thumbs.db
