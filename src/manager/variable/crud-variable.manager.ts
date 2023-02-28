@@ -23,7 +23,7 @@ export class CrudVariableManager extends ServiceVariableManager {
         if (!options || !options.operation) {
             options.operation = 'list';
         }
-        const serviceDef = variable.getByCrudId(variable.crudOperationId, variable.getPrefabName());
+        const serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
         let methodInfo = serviceDef === null ? null : _.get(serviceDef, 'wmServiceOperationInfo');
         methodInfo = serviceDef.filter(function(item) {
             return options.operation === item.operationType;
@@ -64,7 +64,7 @@ export class CrudVariableManager extends ServiceVariableManager {
     }
 
     private getOperationInfo(variable, options) {
-        let serviceDef = variable.getByCrudId(variable.crudOperationId, variable.getPrefabName());
+        let serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
         let methodInfo;
         // fallback if there is no operation
         if (options && !options.operation) {
@@ -324,7 +324,8 @@ export class CrudVariableManager extends ServiceVariableManager {
     }
 
     public getInputParms(variable) {
-        return _.get(variable.serviceInfo, 'parameters');
+        const wmServiceOperationInfo = _.get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
+        return _.get(wmServiceOperationInfo, 'parameters');
     }
 
     public setInput(variable, key, val, options, type?) {
