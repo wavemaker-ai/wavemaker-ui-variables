@@ -6,7 +6,7 @@ import { ServiceVariableUtils } from '../../util/variable/service-variable.utils
 import { $queue } from '../../util/inflight-queue';
 import { BaseVariableManager } from './base-variable.manager';
 import { CONSTANTS, VARIABLE_CONSTANTS, WS_CONSTANTS } from '../../constants/variables.constants';
-import { appManager, formatExportExpression, setInput, decodeData } from './../../util/variable/variables.utils';
+import { appManager, formatExportExpression, setInput, decodeData, metadataService } from './../../util/variable/variables.utils';
 import { getEvaluatedOrderBy, initiateCallback, securityService } from '../../util/variable/variables.utils';
 import { getAccessToken, performAuthorization, removeAccessToken } from '../../util/oAuth.utils';
 import { AdvancedOptions } from '../../advanced-options';
@@ -22,7 +22,6 @@ export class ServiceVariableManager extends BaseVariableManager {
     totalFilesCount = 0;
     successFileUploadCount = 0;
     failedFileUploadCount = 0;
-    getProviderId;
 
     /**
      * function to process error response from a service
@@ -329,9 +328,14 @@ export class ServiceVariableManager extends BaseVariableManager {
      * @returns {any}
      */
     private getMethodInfo(variable, inputFields, options) {
-        // const serviceDef = getClonedObject(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()));
-        const methodInfo = variable.serviceInfo;
-        // const methodInfo = serviceDef === null ? null : _.get(serviceDef, 'wmServiceOperationInfo');
+        let methodInfo;
+        if (!_.isEmpty(metadataService)) {
+            const serviceDef = getClonedObject(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()));
+            methodInfo = serviceDef === null ? null : _.get(serviceDef, 'wmServiceOperationInfo');
+        } else  {
+            methodInfo = variable.serviceInfo;
+        }
+
         if (!methodInfo) {
             return methodInfo;
         }
@@ -370,7 +374,7 @@ export class ServiceVariableManager extends BaseVariableManager {
      * @returns {any}
      */
     private getProviderInfo(variable, providerId) {
-        return variable.getProviderId(providerId, variable.getPrefabName());
+        return getClonedObject(metadataService.getByProviderId(providerId, variable.getPrefabName()));
     }
 
     /**
@@ -587,7 +591,12 @@ export class ServiceVariableManager extends BaseVariableManager {
     }
 
     public getInputParms(variable) {
-        const wmServiceOperationInfo = variable.serviceInfo;
+        let wmServiceOperationInfo;
+        if (!_.isEmpty(metadataService)) {
+            wmServiceOperationInfo = _.get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
+        } else {
+            wmServiceOperationInfo = variable.serviceInfo;
+        }
         return _.get(wmServiceOperationInfo, 'parameters');
     }
 
