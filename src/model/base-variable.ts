@@ -5,7 +5,9 @@ import {
     getTargetNodeKey,
     getTargetObj,
     getTarget,
-    setValueToNode
+    setValueToNode,
+    internalBoundNodeMap,
+    updateInternalNodes
 } from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
 import { EventNotifier, DefaultEventNotifier } from "../types/event-notifier";
@@ -64,6 +66,7 @@ export abstract class BaseVariable implements EventNotifier {
     }
 
     invokeOnParamChange(obj?, newVal?, oldVal?) {
+        const runMode = true;
         if(!obj) {
             return;
         }
@@ -79,6 +82,17 @@ export abstract class BaseVariable implements EventNotifier {
             newVal = getClonedObject(newVal);
         }
         setValueToNode(target, obj, root, this, newVal); // cloning newVal to keep the source clean
+        if (runMode) {
+            /*set the internal bound node map with the latest updated value*/
+            if (!internalBoundNodeMap.has(this)) {
+                internalBoundNodeMap.set(this, {});
+            }
+            _.set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
+            /*update the internal nodes after internal node map is set*/
+            if (_.isObject(newVal)) {
+                updateInternalNodes(target, root, this);
+            }
+        }
         return Promise.resolve(this);
     }
 

@@ -13,6 +13,7 @@ export let toasterService: any;
 export let oauthService: any;
 export let securityService: any;
 export let dialogService: any;
+export let internalBoundNodeMap = new Map();
 const timers = new Map();
 const DOT_EXPR_REX = /^\[("|')[\w\W]*(\1)\]$/;
 const _invoke = (variable, op) => {
@@ -379,6 +380,58 @@ export const getTarget = (variable) => {
     }
     return target;
 }
+
+/**
+ * The model internalBoundNodeMap stores the reference to latest computed values against internal(nested) bound nodes
+ * This is done so that the internal node's computed value is not lost, once its parent node's value is computed at a later point
+ * E.g.
+ * Variable.employeeVar has following bindings
+ * "dataBinding": [
+ {
+         "target": "department.budget",
+         "value": "bind:Variables.budgetVar.dataSet"
+     },
+ {
+         "target": "department",
+         "value": "bind:Variables.departmentVar.dataSet"
+     }
+ ]
+ * When department.budget is computed, employeeVar.dataSet = {
+ *  "department": {
+ *      "budget": {"q1": 1111}
+ *  }
+ * }
+ *
+ * When department is computed
+ *  "department": {
+ *      "name": "HR",
+ *      "location": "Hyderabad"
+ *  }
+ * The budget field (computed earlier) is LOST.
+ *
+ * To avoid this, the latest values against internal nodes (in this case department.budget) are stored in a map
+ * These values are assigned back to internal fields if the parent is computed (in this case department)
+ * @param target
+ * @param root
+ * @param variable
+ */
+export const updateInternalNodes = (target, root, variable) => {
+    const boundInternalNodes = _.keys(_.get(internalBoundNodeMap.get(variable), [variable.name, root])),
+        targetNodeKey = getTargetNodeKey(target);
+    let internalNodes;
+    function findInternalNodeBound() {
+        return _.filter(boundInternalNodes, function (node) {
+            // the later condition in check (targetNodeKey === root || targetNodeKey === 'dataBinding') is specifically for live variable of insert/update types
+            return (node !== targetNodeKey && _.includes(node, targetNodeKey)) || ((targetNodeKey === root || targetNodeKey === 'dataBinding') && node !== targetNodeKey);
+        });
+    }
+    internalNodes = findInternalNodeBound();
+    if ((internalNodes.length)) {
+        _.forEach(internalNodes, function (node) {
+            setValueToNode(node, {target: node}, root, variable, _.get(internalBoundNodeMap.get(variable), [variable.name, root, node]));
+        });
+    }
+};
 
 export const initiateCallback = (type: string, variable: any, data: any, options?: any, skipDefaultNotification?: boolean) => {
 
