@@ -197,8 +197,9 @@ export abstract class BaseVariable implements EventNotifier {
      * @returns {string}
      */
     getPrefabName() {
+        const prefabname = this._context && (this._context.prefabname || this._context.prefabName);
         // __self__ is a prefab name given to a prefab which is run in preview mode
-        return this._context && (this._context.prefabName !== '__self__' && this._context.prefabName);
+        return prefabname !== '__self__' && prefabname;
     }
 
     mute() {

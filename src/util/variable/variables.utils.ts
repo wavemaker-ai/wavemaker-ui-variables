@@ -2,7 +2,9 @@ import {findValueOf, getValidJSON, noop, extractType, DataType, DEFAULT_FORMATS}
 
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 
-declare const window: any, _: any, he: any, moment;
+declare const window: any, moment;
+import _ from 'lodash';
+import he from 'he';
 
 export let appManager: any;
 export let httpService: any;
