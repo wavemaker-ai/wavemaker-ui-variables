@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@metrichor/jmespath": "^0.3.1",
+    "he": "^1.2.0",
     "lodash": "^4.17.21",
     "x2js": "^3.4.3"
   }
