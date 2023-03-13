@@ -6,7 +6,7 @@ import { ServiceVariableUtils } from '../../util/variable/service-variable.utils
 import { $queue } from '../../util/inflight-queue';
 import { BaseVariableManager } from './base-variable.manager';
 import { CONSTANTS, VARIABLE_CONSTANTS, WS_CONSTANTS } from '../../constants/variables.constants';
-import { appManager, formatExportExpression, setInput, decodeData, metadataService } from './../../util/variable/variables.utils';
+import { appManager, formatExportExpression, setInput, decodeData, metadataService, getErrMessage } from './../../util/variable/variables.utils';
 import { getEvaluatedOrderBy, initiateCallback, securityService } from '../../util/variable/variables.utils';
 import { getAccessToken, performAuthorization, removeAccessToken } from '../../util/oAuth.utils';
 import { AdvancedOptions } from '../../advanced-options';
@@ -192,7 +192,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             this.fileUploadCount++;
             this.failedFileUploadCount++;
             this.fileUploadResponse.push(e);
-            const errMsg = variable.httpService.getErrMessage(e);
+            const errMsg = getErrMessage(e, variable.httpService.getLocale());
             // if a file upload failed, notify the progress listener to take action
             if (variable._progressObservable) {
                 variable._progressObservable.next({
@@ -505,7 +505,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         };
 
         errorHandler = (err, reject) => {
-            const errMsg = variable.httpService.getErrMessage(err);
+            const errMsg = getErrMessage(err, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
             this.processErrorResponse(variable, errMsg, error, err, options.skipNotification);

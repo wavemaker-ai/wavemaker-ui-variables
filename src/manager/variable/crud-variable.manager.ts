@@ -5,7 +5,7 @@ import { ServiceVariableUtils } from '../../util/variable/service-variable.utils
 import { $queue } from '../../util/inflight-queue';
 import { VARIABLE_CONSTANTS, WS_CONSTANTS } from '../../constants/variables.constants';
 import {appManager, setInput} from './../../util/variable/variables.utils';
-import { getEvaluatedOrderBy, httpService, initiateCallback, metadataService } from '../../util/variable/variables.utils';
+import { getEvaluatedOrderBy, httpService, initiateCallback, metadataService, getErrMessage } from '../../util/variable/variables.utils';
 import { getAccessToken } from '../../util/oAuth.utils';
 import {ServiceVariableManager} from './service-variable.manager';
 
@@ -287,7 +287,7 @@ export class CrudVariableManager extends ServiceVariableManager {
         };
 
         errorHandler = (err, reject) => {
-            const errMsg = variable.httpService.getErrMessage(err);
+            const errMsg = getErrMessage(err, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
             this.processErrorResponse(variable, errMsg, error, err, options.skipNotification);
