@@ -2,7 +2,7 @@
 import { getClonedObject, isDateTimeType, isDefined, triggerFn } from "../../util/utils";
 
 import { BaseVariableManager } from './base-variable.manager';
-import { debounceVariableCall, formatExportExpression, initiateCallback, setInput, appManager, httpService, formatDate } from '../../util/variable/variables.utils';
+import { debounceVariableCall, formatExportExpression, initiateCallback, setInput, appManager, httpService, formatDate, getErrMessage } from '../../util/variable/variables.utils';
 import { LiveVariableUtils } from '../../util/variable/live-variable.utils';
 import { decodeData } from './../../util/variable/variables.utils';
 import { $queue } from '../../util/inflight-queue';
@@ -139,7 +139,7 @@ export class LiveVariableManager extends BaseVariableManager {
             }
         };
         const errorHandler = (error, reject) => {
-            const errMsg = variable.httpService.getErrMessage(error);
+            const errMsg = getErrMessage(error, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
             reject({

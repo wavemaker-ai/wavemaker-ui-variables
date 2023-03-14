@@ -1,4 +1,4 @@
-import {findValueOf, getValidJSON, noop, extractType, DataType, DEFAULT_FORMATS} from '../utils';
+import {findValueOf, getValidJSON, noop, extractType, DataType, DEFAULT_FORMATS, replace} from '../utils';
 
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 
@@ -513,3 +513,44 @@ export const formatDate = (value, type) => {
     }
     return _formatDate(value, type);
 };
+
+const parseErrors = (errors) => {
+    let errMsg = '';
+    if (errors && errors.error && errors.error.length) {
+        errors.error.forEach((errorDetails, i) => {
+            errMsg += parseError(errorDetails) + (i > 0 ? '\n' : '');
+        });
+    }
+    return errMsg;
+}
+
+const parseError = (errorObj) => {
+    let errMsg;
+    errMsg = errorObj.message ? replace(errorObj.message, errorObj.parameters, true) : ((errorObj.parameters && errorObj.parameters[0]) || '');
+    return errMsg;
+}
+
+/**
+ * This method filters and returns error message from the failed network call response.
+ * @param err, error form network call failure
+ */
+export const getErrMessage = (err: any, localeObject: any) =>  {
+    const HTTP_STATUS_MSG = {
+        404: localeObject['MESSAGE_404_ERROR'] || 'Requested resource not found',
+        401: localeObject['MESSAGE_401_ERROR'] || 'Requested resource requires authentication',
+        403: localeObject['LABEL_FORBIDDEN_MESSAGE'] || 'The requested resource access/action is forbidden.'
+    };
+
+    // check if error message present for responded http status
+    let errMsg = HTTP_STATUS_MSG[err.status];
+    let errorDetails = err.error;
+    errorDetails = getValidJSON(errorDetails) || errorDetails;
+
+    // WM services have the format of error response as errorDetails.error
+    if (errorDetails && errorDetails.errors) {
+        errMsg = parseErrors(errorDetails.errors) || errMsg || 'Service Call Failed';
+    } else {
+        errMsg = errMsg || 'Service Call Failed';
+    }
+    return errMsg;
+}
