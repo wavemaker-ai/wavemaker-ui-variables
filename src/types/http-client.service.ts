@@ -3,4 +3,5 @@ export interface HttpClientService {
     sendCallAsObservable?: (options) => void;
     getLocale?: () => void;
     sendCall:  (options, variable) => void;
+    cancel: (variable) => void;
 }
