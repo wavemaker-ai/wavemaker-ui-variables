@@ -625,8 +625,8 @@ export class ServiceVariableManager extends BaseVariableManager {
                     this.notifyInflight(variable, false);
                 }
             } else {
-                if (variable._observable) {
-                    variable._observable.unsubscribe();
+                if (variable.httpService.cancel) {
+                    variable.httpService.cancel(variable);
                     $queue.process(variable);
                     // notify inflight variable
                     this.notifyInflight(variable, false);
