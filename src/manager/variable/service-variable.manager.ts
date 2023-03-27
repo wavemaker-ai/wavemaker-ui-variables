@@ -374,7 +374,7 @@ export class ServiceVariableManager extends BaseVariableManager {
      * @returns {any}
      */
     private getProviderInfo(variable, providerId) {
-        return getClonedObject(metadataService.getByProviderId(providerId, variable.getPrefabName()));
+        return getClonedObject(metadataService?.getByProviderId(providerId, variable.getPrefabName()));
     }
 
     /**
