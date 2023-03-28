@@ -163,7 +163,7 @@ export class ServiceVariableManager extends BaseVariableManager {
     }
 
     protected uploadFileInFormData(variable: ServiceVariable, options: any, success: Function, error: Function, file, requestParams) {
-        const promise = upload(file, variable.httpService, requestParams.data, {
+        const promise = upload(file, variable, requestParams.data, {
             fileParamName: 'files',
             url: requestParams.url
         });
@@ -176,12 +176,12 @@ export class ServiceVariableManager extends BaseVariableManager {
                     this.processSuccessResponse(this.fileUploadResponse, variable, options, success);
                     this.fileUploadResponse = [];
                     if (!variable.onSuccess) {
-                        appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_UPLOAD_SUCCESS, 'success');
+                        appManager && appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_UPLOAD_SUCCESS, 'success');
                     }
                 } else {
                     initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, this.fileUploadResponse);
                     this.fileUploadResponse = [];
-                    appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_UPLOAD_ERROR, 'error');
+                    appManager && appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_UPLOAD_ERROR, 'error');
                 }
                 this.fileUploadCount = 0;
                 this.successFileUploadCount = 0;
@@ -615,7 +615,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             // If the request is a File upload request then modify the elements associated with file upload
             // else unsubscribe from the observable on the variable.
             if (ServiceVariableUtils.isFileUploadRequest(variable)) {
-                $file._uploadProgress.unsubscribe();
+                variable.httpService.cancel(variable, $file);
                 $file.status = 'abort';
                 this.totalFilesCount--;
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.ABORT, variable, $file);
