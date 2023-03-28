@@ -5,15 +5,6 @@ import { NotifyPromise } from './notify-promise';
 // declare const _: any;
 import _ from 'lodash';
 
-enum HTTP_EVENT_TYPE {
-    Sent = 0,
-    UploadProgress = 1,
-    ResponseHeader = 2,
-    DownloadProgress = 3,
-    Response= 4,
-    User = 5
-}
-
 enum UPLOAD_STATUS {
     QUEUED        = 'queued',
     IN_PROGRESS   = 'inprogress',
@@ -104,7 +95,7 @@ function appendFileToFormData(file: any, fd: any, options: any) {
 }
 
 /* upload file with ajax calling */
-function uploadWithAjax(file: any, httpService: any, fd: any, url: any, options: any) {
+function uploadWithAjax(file: any, variable: any, fd: any, url: any, options: any) {
     const cloneFD = new FormData();
     const iterate = (value: any, key: any) => {
         const fileObject = (_.isArray(value) ? value[0] : value);
@@ -123,19 +114,12 @@ function uploadWithAjax(file: any, httpService: any, fd: any, url: any, options:
 
     const promise = new NotifyPromise((resolve: any, reject: any, notify: any) => {
         // ToDo - variable seperation
-        const request = httpService.upload(url, cloneFD).subscribe((event: any) => {
-            if (event.type === HTTP_EVENT_TYPE.UploadProgress) {
-                const uploadProgress = Math.round(100 * event.loaded / event.total);
-                notify(uploadProgress);
-            }
-
-            if (event.type === HTTP_EVENT_TYPE.Response) {
-                resolve(event.body);
-            }
+        variable.httpService.uploadFile(url, cloneFD, variable, {notify: notify}).then((data: any) => {
+           resolve(data);
         }, (error: any) => {
             reject(error);
         });
-        file._uploadProgress = request;
+        file._uploadProgress = variable.request;
     });
 
     return promise;
@@ -178,11 +162,11 @@ function isMobileApp() {
  * @returns a promise to listen for success, event, onProgress.
  *  One can also abort the upload by simply calling abort function.
  */
-export function upload(files: any, httpService: any, fd: any, config: any, options?: any) {
+export function upload(files: any, variable: any, fd: any, config: any, options?: any) {
     options = _.extend({
         'paramName' : config.fileParamName
     }, options);
-    return uploadWithAjax(files, httpService, fd, config.url, options);
+    return uploadWithAjax(files, variable, fd, config.url, options);
     // let fileTransfers = [],
     //     url = config.uploadUrl;
     // options = _.extend({
