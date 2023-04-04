@@ -123,6 +123,7 @@ export const VARIABLE_CONSTANTS = {
         DATA: 'DataService',
         SECURITY: 'SecurityServiceType',
         WEBSOCKET: 'WebSocketService',
+        OPENAPI: 'OpenAPIService'
     },
     CONTROLLER_TYPE: {
         QUERY: 'QueryExecution',
