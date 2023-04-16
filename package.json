@@ -1,0 +1,32 @@
+{
+  "name": "@wavemaker/variables",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "module": "index",
+  "scripts": {
+    "build": "tsc && webpack  --mode development && node ./scripts/build.js post-build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "execa": "^5.0.0",
+    "fs-extra": "^11.1.0",
+    "ts-loader": "^9.3.1",
+    "typescript": "4.3.5",
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0",
+    "yargs": "^16.2.0",
+    "tar": "^6.1.0"
+  },
+  "dependencies": {
+    "@metrichor/jmespath": "^0.3.1",
+    "he": "^1.2.0",
+    "lodash": "^4.17.21",
+    "x2js": "^3.4.3"
+  }
+}
