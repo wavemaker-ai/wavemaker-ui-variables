@@ -202,6 +202,9 @@ export class LiveVariableManager extends BaseVariableManager {
             dbOperation = (tableOptions.filter && tableOptions.filter.length) ? 'searchTableData' : 'readTableData';
             requestData = tableOptions.filter;
         }
+        if (options.isVariableInvokeCall) {
+            requestData = {'isVariableInvokeCall': true};
+        }
         dbOperationOptions = {
             'projectID': $rootScope.project.id,
             'service': variable.getPrefabName() ? '' : 'services',
