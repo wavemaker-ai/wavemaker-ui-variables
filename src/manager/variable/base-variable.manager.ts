@@ -43,6 +43,9 @@ export abstract class BaseVariableManager {
     // ToDo - variable seperation
     httpCall(requestParams, variable, params?: any) {
         return new Promise((resolve, reject) => {
+            // send _source info, to identify the call is invoked from framework
+            requestParams['_source'] = 'variable';
+
             variable._observable = variable.httpService.sendCallAsObservable(requestParams, params).subscribe((response: any) => {
                 if (response && response.type) {
                     this.setRequestTrackId(response, variable);
