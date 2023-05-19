@@ -34,7 +34,7 @@ async function postBuild(runtimeVersion) {
     packageData.main = 'index';
     packageData.module = 'index';
     packageData.exports = {
-      "./": "./"
+        ".": "./index"
     };
     delete packageData['files'];
 
