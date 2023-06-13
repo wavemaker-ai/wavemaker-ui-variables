@@ -543,7 +543,7 @@ export const getErrMessage = (err: any, localeObject: any) =>  {
 
     // check if error message present for responded http status
     let errMsg = HTTP_STATUS_MSG[err.status];
-    let errorDetails = err.error;
+    let errorDetails = err.error || err.data;
     errorDetails = getValidJSON(errorDetails) || errorDetails;
 
     // WM services have the format of error response as errorDetails.error

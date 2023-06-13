@@ -23,10 +23,12 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
     // Used to track a variable http call, so that it can be cancelled at any point of time during its execution
     _observable;
     filterExpressions;
+    httpService;
 
     constructor(variable: any) {
         super();
         Object.assign(this as any, variable);
+        this.httpService = variable.httpClientService;
     }
 
     execute(operation, options) {

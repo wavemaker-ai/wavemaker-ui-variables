@@ -11,8 +11,9 @@ import { AdvancedOptions } from '../../advanced-options';
 import { generateConnectionParams } from '../../util/variable/live-variable.http.utils';
 import { VariableEvents } from "../../model/base-variable";
 
-declare const _, window;
+declare const window;
 const emptyArr = [];
+import _ from 'lodash';
 
 export class LiveVariableManager extends BaseVariableManager {
 
@@ -134,7 +135,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
     private makeCall(variable, dbOperation, params) {
         const successHandler = (response, resolve) => {
-            if (response && response.type) {
+            if (response && response.type || response && response.status) {
                 resolve(response);
             }
         };
@@ -216,8 +217,8 @@ export class LiveVariableManager extends BaseVariableManager {
             'url': variable.getPrefabName() ? ($rootScope.project.deployedUrl + '/prefabs/' + variable.getPrefabName()) : $rootScope.project.deployedUrl
         };
         getEntitySuccess = (response: any, resolve: any) => {
-            if (response && response.type) {
-                response = response.body;
+            if (response && (response.type || response.status)) {
+                response = response.body || response.data;
                 dataObj.data = response.content;
                 dataObj.pagination = _.omit(response, 'content');
                 const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(response, {pagination: dataObj.pagination});

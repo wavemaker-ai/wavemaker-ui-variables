@@ -2,7 +2,8 @@ import { hasCordova, getClonedObject, isDateTimeType, isDefined, replace, trigge
 import { $rootScope, DB_CONSTANTS, SWAGGER_CONSTANTS } from '../../constants/variables.constants';
 import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
-declare const _, moment;
+declare const moment;
+import _ from 'lodash';
 
 export class LiveVariableUtils {
 
