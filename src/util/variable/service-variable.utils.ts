@@ -6,7 +6,6 @@ import { getAccessToken } from './../oAuth.utils';
 import { formatDate} from "./variables.utils";
 import { PaginationUtils } from '../../util/variable/pagination.utils';
 
-// declare const _: any;
 import _ from 'lodash';
 
 

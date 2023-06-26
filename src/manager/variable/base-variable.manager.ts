@@ -2,7 +2,6 @@ import { httpService } from '../../util/variable/variables.utils';
 import { appManager} from './../../util/variable/variables.utils';
 import { AdvancedOptions } from '../../advanced-options';
 
-// declare const _: any;
 import _ from 'lodash';
 
 export abstract class BaseVariableManager {

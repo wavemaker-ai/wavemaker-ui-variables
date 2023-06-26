@@ -907,8 +907,8 @@ export class LiveVariableManager extends BaseVariableManager {
             sort: orderBy
         };
         getRelatedTableDataSuccess = (res: any, resolve: any) => {
-            if (res && res.type) {
-                const response = res.body;
+            if (res && (res.type || res.status)) {
+                const response = res.body || res.data;
                 /*Remove the self related columns from the data. As backend is restricting the self related column to one level, In liveform select, dataset and datavalue object
                  * equality does not work. So, removing the self related columns to acheive the quality*/
                 const data = _.map(response.content, o => _.omit(o, selfRelatedCols));
