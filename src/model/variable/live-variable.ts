@@ -6,7 +6,7 @@ import { ApiAwareVariable } from './api-aware-variable';
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 import { LiveVariableManager } from '../../manager/variable/live-variable.manager';
 import {debounceVariableCall} from "../../util/variable/variables.utils";
-declare const _;
+import _ from 'lodash';
 const getManager = (): LiveVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.LIVE);
 };
