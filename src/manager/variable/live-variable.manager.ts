@@ -515,7 +515,7 @@ export class LiveVariableManager extends BaseVariableManager {
         };
 
         onCUDsuccess = (data: any, resolve: any) => {
-            let response = data.body;
+            let response = data.body || data.data;
             const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(data);
 
             $queue.process(variable);
