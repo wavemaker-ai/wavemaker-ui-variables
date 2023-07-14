@@ -481,7 +481,7 @@ const getDateTimeFormatForType = (type) => {
 };
 
 // Format value for datetime types
-const _formatDate = (dateValue, type) => {
+const _formatDate = (dateValue, type, dateFormatter) => {
     let epoch;
     if (_.isDate(dateValue)) {
         epoch = dateValue.getTime();
@@ -500,20 +500,20 @@ const _formatDate = (dateValue, type) => {
     if (type === DataType.TIME && !epoch) {
         epoch = moment(new Date().toDateString() + ' ' + dateValue).valueOf();
     }
-    return dateValue && appManager.getPipe('date').transform(epoch, getDateTimeFormatForType(type));
+    return dateValue && dateFormatter.format(epoch, getDateTimeFormatForType(type));
 };
 
 // Function to convert values of date time types into default formats
-export const formatDate = (value, type) => {
+export const formatDate = (value, type, dateFormatter) => {
     if (_.includes(type, '.')) {
         type = _.toLower(extractType(type));
     }
     if (_.isArray(value)) {
         return _.map(value, function (val) {
-            return _formatDate(val, type);
+            return _formatDate(val, type, dateFormatter);
         });
     }
-    return _formatDate(value, type);
+    return _formatDate(value, type, dateFormatter);
 };
 
 const parseErrors = (errors) => {

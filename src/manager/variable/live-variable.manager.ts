@@ -332,8 +332,7 @@ export class LiveVariableManager extends BaseVariableManager {
                 const fieldType = LiveVariableUtils.getFieldType(key, variable);
                 let fieldValue;
                 if (isDateTimeType(fieldType)) {
-                    // ToDo - variable seperation
-                    fieldValue = formatDate(value, fieldType);
+                    fieldValue = formatDate(value, fieldType, variable.dateFormatter);
                     rowObject[key] = fieldValue;
                 } else if (_.isArray(value) && LiveVariableUtils.isStringType(fieldType)) {
                     // Construct ',' separated string if param is not array type but value is an array
@@ -368,8 +367,7 @@ export class LiveVariableManager extends BaseVariableManager {
                     if (action !== 'deleteTableData' || LiveVariableUtils.isCompositeKey(primaryKey)) {
                         fieldType = LiveVariableUtils.getFieldType(fieldName, variable);
                         if (isDateTimeType(fieldType)) {
-                            // ToDo - variable seperation
-                            fieldValue = formatDate(fieldValue, fieldType);
+                            fieldValue = formatDate(fieldValue, fieldType, variable.dateFormatter);
                         } else if (_.isArray(fieldValue) && LiveVariableUtils.isStringType(fieldType)) {
                             // Construct ',' separated string if param is not array type but value is an array
                             fieldValue = _.join(fieldValue, ',');

@@ -24,6 +24,7 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
     _observable;
     filterExpressions;
     httpService;
+    dateFormatter;
 
     constructor(variable: any) {
         super();
