@@ -46,7 +46,8 @@ export class ServiceVariableManager extends BaseVariableManager {
         }
         /* trigger error callback */
         triggerFn(errorCB, errMsg);
-
+        
+        variable.notify(VariableEvents.AFTER_INVOKE, [this, errMsg]);
        if (!CONSTANTS.isStudioMode) {
             /* process next requests in the queue */
             variable.canUpdate = true;
