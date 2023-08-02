@@ -3,7 +3,7 @@ import DatasetUtil from '../util/dataset-util';
 import {getTarget, getTargetNodeKey, getTargetObj, setValueToNode} from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
 
-declare const _;
+import _ from 'lodash';
 export abstract class BaseAction {
 
     protected _id: string;

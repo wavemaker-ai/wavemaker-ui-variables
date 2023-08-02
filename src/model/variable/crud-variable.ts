@@ -10,7 +10,7 @@ import {CRUDCreate} from '../crud-create';
 import {CRUDUpdate} from '../crud-update';
 import {CRUDDelete} from '../crud-delete';
 
-declare const _;
+import _ from 'lodash';
 
 const getManager = (): CrudVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.CRUD);

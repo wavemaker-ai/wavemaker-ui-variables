@@ -2,7 +2,9 @@ import { hasCordova, getClonedObject, isDateTimeType, isDefined, replace, trigge
 import { $rootScope, DB_CONSTANTS, SWAGGER_CONSTANTS } from '../../constants/variables.constants';
 import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
-declare const _, moment;
+// @ts-ignore
+import moment from 'moment';
+import _ from 'lodash';
 
 export class LiveVariableUtils {
 
@@ -237,8 +239,7 @@ export class LiveVariableUtils {
                     case 'date':
                     case 'datetime':
                     case 'timestamp':
-                        // ToDo - variable seperation
-                        fieldValue = formatDate(fieldValue, fieldType);
+                        fieldValue = formatDate(fieldValue, fieldType, variable.dateFormatter);
                         filterCondition = filterCondition ? LiveVariableUtils.getFilterCondition(filterCondition) : matchModes['exact'];
                         break;
                     case 'text':
@@ -515,11 +516,14 @@ export class LiveVariableUtils {
         if (!_.isEmpty(options.filterFields)) {
             let operator = '';
             for (const field in options.filterFields) {
-                operator = options.filterFields[field]['logicalOp'] || '';
+                operator = options.filterFields[field] && options.filterFields[field]['logicalOp'] || '';
                 break;
             }
             filterRules = {'condition': options.logicalOp || operator || 'AND', 'rules': []};
             _.forEach(options.filterFields, (filterObj, filterName) => {
+                if (!filterObj) {
+                    return
+                }
                 const filterCondition = matchModes[filterObj.matchMode] || matchModes[filterObj.filterCondition] || filterObj.filterCondition;
                 if (_.includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition) ||
                     (!_.isNil(filterObj.value) && filterObj.value !== '')) {

@@ -2,7 +2,6 @@ import { triggerFn } from './utils';
 
 import { NotifyPromise } from './notify-promise';
 
-// declare const _: any;
 import _ from 'lodash';
 
 enum UPLOAD_STATUS {
