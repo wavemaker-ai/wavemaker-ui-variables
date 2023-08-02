@@ -355,7 +355,7 @@ export class ServiceVariableUtils {
          */
         if (isProxyCall) {
             // avoiding cloakHeadersForProxy when the method is invoked from apidesigner.
-            headers = variable.serviceType !== VARIABLE_CONSTANTS.SERVICE_TYPE.REST || operationInfo.skipCloakHeaders ? headers : cloakHeadersForProxy(headers);
+            headers = (variable.serviceType !== VARIABLE_CONSTANTS.SERVICE_TYPE.REST && variable.serviceType !== VARIABLE_CONSTANTS.SERVICE_TYPE.OPENAPI) || operationInfo.skipCloakHeaders ? headers : cloakHeadersForProxy(headers);
             if (variable.getPrefabName() && VARIABLE_CONSTANTS.REST_SUPPORTED_SERVICES.indexOf(variable.serviceType) !== -1) {
                 /* if it is a prefab variable (used in a normal project), modify the url */
                 url = 'prefabs/' + variable.getPrefabName() + url;
