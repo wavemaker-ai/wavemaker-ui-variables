@@ -6,7 +6,7 @@ import { ApiAwareVariable } from './api-aware-variable';
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 import { LiveVariableManager } from '../../manager/variable/live-variable.manager';
 import {debounceVariableCall} from "../../util/variable/variables.utils";
-declare const _;
+import _ from 'lodash';
 const getManager = (): LiveVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.LIVE);
 };
@@ -23,10 +23,13 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
     // Used to track a variable http call, so that it can be cancelled at any point of time during its execution
     _observable;
     filterExpressions;
+    httpService;
+    dateFormatter;
 
     constructor(variable: any) {
         super();
         Object.assign(this as any, variable);
+        this.httpService = variable.httpClientService;
     }
 
     execute(operation, options) {

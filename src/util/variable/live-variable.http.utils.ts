@@ -3,7 +3,7 @@ import { getClonedObject, removeExtraSlashes } from '../utils';
 import { VARIABLE_URLS } from '../../constants/variables.constants';
 import { httpService } from './variables.utils';
 
-declare const _;
+import _ from 'lodash';
 
 const isStudioMode = false;
 

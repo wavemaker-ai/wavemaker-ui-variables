@@ -11,8 +11,9 @@ import { AdvancedOptions } from '../../advanced-options';
 import { generateConnectionParams } from '../../util/variable/live-variable.http.utils';
 import { VariableEvents } from "../../model/base-variable";
 
-declare const _, window;
+declare const window;
 const emptyArr = [];
+import _ from 'lodash';
 
 export class LiveVariableManager extends BaseVariableManager {
 
@@ -134,7 +135,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
     private makeCall(variable, dbOperation, params) {
         const successHandler = (response, resolve) => {
-            if (response && response.type) {
+            if (response && response.type || response && response.status) {
                 resolve(response);
             }
         };
@@ -216,8 +217,8 @@ export class LiveVariableManager extends BaseVariableManager {
             'url': variable.getPrefabName() ? ($rootScope.project.deployedUrl + '/prefabs/' + variable.getPrefabName()) : $rootScope.project.deployedUrl
         };
         getEntitySuccess = (response: any, resolve: any) => {
-            if (response && response.type) {
-                response = response.body;
+            if (response && (response.type || response.status)) {
+                response = response.body || response.data;
                 dataObj.data = response.content;
                 dataObj.pagination = _.omit(response, 'content');
                 const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(response, {pagination: dataObj.pagination});
@@ -331,8 +332,7 @@ export class LiveVariableManager extends BaseVariableManager {
                 const fieldType = LiveVariableUtils.getFieldType(key, variable);
                 let fieldValue;
                 if (isDateTimeType(fieldType)) {
-                    // ToDo - variable seperation
-                    fieldValue = formatDate(value, fieldType);
+                    fieldValue = formatDate(value, fieldType, variable.dateFormatter);
                     rowObject[key] = fieldValue;
                 } else if (_.isArray(value) && LiveVariableUtils.isStringType(fieldType)) {
                     // Construct ',' separated string if param is not array type but value is an array
@@ -367,8 +367,7 @@ export class LiveVariableManager extends BaseVariableManager {
                     if (action !== 'deleteTableData' || LiveVariableUtils.isCompositeKey(primaryKey)) {
                         fieldType = LiveVariableUtils.getFieldType(fieldName, variable);
                         if (isDateTimeType(fieldType)) {
-                            // ToDo - variable seperation
-                            fieldValue = formatDate(fieldValue, fieldType);
+                            fieldValue = formatDate(fieldValue, fieldType, variable.dateFormatter);
                         } else if (_.isArray(fieldValue) && LiveVariableUtils.isStringType(fieldType)) {
                             // Construct ',' separated string if param is not array type but value is an array
                             fieldValue = _.join(fieldValue, ',');
@@ -514,7 +513,7 @@ export class LiveVariableManager extends BaseVariableManager {
         };
 
         onCUDsuccess = (data: any, resolve: any) => {
-            let response = data.body;
+            let response = data.body || data.data;
             const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(data);
 
             $queue.process(variable);
@@ -907,8 +906,8 @@ export class LiveVariableManager extends BaseVariableManager {
             sort: orderBy
         };
         getRelatedTableDataSuccess = (res: any, resolve: any) => {
-            if (res && res.type) {
-                const response = res.body;
+            if (res && (res.type || res.status)) {
+                const response = res.body || res.data;
                 /*Remove the self related columns from the data. As backend is restricting the self related column to one level, In liveform select, dataset and datavalue object
                  * equality does not work. So, removing the self related columns to acheive the quality*/
                 const data = _.map(response.content, o => _.omit(o, selfRelatedCols));

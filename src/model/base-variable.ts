@@ -11,7 +11,7 @@ import {
 } from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
 import { EventNotifier, DefaultEventNotifier } from "../types/event-notifier";
-declare const _: any;
+import _ from 'lodash';
 export enum VariableEvents {
     BEFORE_INVOKE = 'beforeInvoke',
     AFTER_INVOKE = 'afterInvoke'
@@ -26,6 +26,8 @@ export abstract class BaseVariable implements EventNotifier {
     isList: boolean;
     dataSet: any;
     dataBinding: any;
+    inputFields: any;
+    filterFields: any;
     _context: any;
     isMuted = false;
     params;
