@@ -173,6 +173,9 @@ export const xmlToJson = (xmlString: string) => {
         // in this case also, return null to denote conversion failure
         if (Object.keys(json).length === 0) {
             json = null;
+        } else if (_.get(json, 'html.body.parsererror')) {
+            // for csv data, the response comes in an object
+            json = null;
         } else {
             json = _.get(json, Object.keys(json)[0]);
         }
