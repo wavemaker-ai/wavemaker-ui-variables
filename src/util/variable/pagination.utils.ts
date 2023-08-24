@@ -303,9 +303,16 @@ export class PaginationUtils {
      */
     static setParameterVal(paramName, res, operationInfo, variable) {
         const paginationInfo = this.getPaginationInfo(operationInfo, variable);
-        const param = paginationInfo.input[paramName].split('.')[0]; 
+        const paginationParams =  paginationInfo.input[paramName].split('.');
+        const param = paginationParams[0]; 
         const sizeObj = _.find(operationInfo.parameters, function(obj) { return obj.name === param });
         res[paramName] = _.result(sizeObj, 'sampleValue');
+        // if input value is configured from object, fetch the value from the specified path
+        if (paginationParams.length > 1) {
+            paginationParams.pop();
+            const paginationParamsPath = paginationParams.join('.');
+            res[paramName] = _.get(JSON.parse(res[paramName]), paginationParamsPath);
+        }
     }
 
     /**
