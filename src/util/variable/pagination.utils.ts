@@ -219,8 +219,13 @@ export class PaginationUtils {
         const paramObj = _.find(operationInfo.parameters, function(obj) { return obj.name === paramName }); 
         // set page/offset and size from pagination if matched parameter's type is header  
         if (paramObj?.parameterType === 'header') {
-            _.set(reqObj, paginationInfo.input[inputParam], variable.pagination['page']);
-            _.set(reqObj, paginationInfo.input.size, variable.pagination['size']);
+            const inputBodyParam = paginationInfo.input[inputParam].split('.').splice(1).join('.');               
+            if (inputParam !== 'offset') { 
+                _.set(reqObj, inputBodyParam, variable.pagination['page']);
+            } else {
+                _.set(reqObj, inputBodyParam, this.getOffsetInfo(variable, options));
+            }
+            _.set(reqObj, paginationInfo.input.size.split('.').splice(1).join('.'), variable.pagination['size']);
             headers[paramName] = JSON.stringify(reqObj[paramName]);
             resObj['headers'] = headers;
         } else if (paramObj?.parameterType === 'body') { 
@@ -309,9 +314,7 @@ export class PaginationUtils {
         res[paramName] = _.result(sizeObj, 'sampleValue');
         // if input value is configured from object, fetch the value from the specified path
         if (paginationParams.length > 1) {
-            paginationParams.pop();
-            const paginationParamsPath = paginationParams.join('.');
-            res[paramName] = _.get(JSON.parse(res[paramName]), paginationParamsPath);
+            res[paramName] = _.get(JSON.parse(res[paramName]), paginationInfo.input[paramName].split('.').splice(1).join('.'));
         }
     }
 
