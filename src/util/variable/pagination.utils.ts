@@ -219,14 +219,15 @@ export class PaginationUtils {
         const paramObj = _.find(operationInfo.parameters, function(obj) { return obj.name === paramName }); 
         // set page/offset and size from pagination if matched parameter's type is header  
         if (paramObj?.parameterType === 'header') {
-            const inputBodyParam = paginationInfo.input[inputParam].split('.').splice(1).join('.');               
+            const inputBodyParam =  'X-WM-' + paginationInfo.input[inputParam];               
             if (inputParam !== 'offset') { 
                 _.set(reqObj, inputBodyParam, variable.pagination['page']);
             } else {
                 _.set(reqObj, inputBodyParam, this.getOffsetInfo(variable, options));
             }
-            _.set(reqObj, paginationInfo.input.size.split('.').splice(1).join('.'), variable.pagination['size']);
-            headers[paramName] = JSON.stringify(reqObj[paramName]);
+            _.set(reqObj, 'X-WM-' + paginationInfo.input.size, variable.pagination['size']);
+            let headerKey = 'X-WM-' + paramName;
+            headers[headerKey] = JSON.stringify(reqObj[headerKey]);
             resObj['headers'] = headers;
         } else if (paramObj?.parameterType === 'body') { 
             // set page/offset and size from pagination if matched parameter's type is body 
