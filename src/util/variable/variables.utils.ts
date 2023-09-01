@@ -439,6 +439,9 @@ export const updateInternalNodes = (target, root, variable) => {
 
 export const initiateCallback = (type: string, variable: any, data: any, options?: any, skipDefaultNotification?: boolean) => {
 
+    if (variable._skipInitiateCallback) {
+        return;
+    }
     /*checking if event is available and variable has event property and variable event property bound to function*/
     const eventValues = variable[type],
         callBackScope = variable._context;
