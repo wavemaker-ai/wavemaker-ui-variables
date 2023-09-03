@@ -25,8 +25,9 @@ export abstract class BaseVariableManager {
      * This method sets the variable parameter requestTrackId to X-WM-Request-Track-Id which is received in the response headers.
      * @param response
      */
-    setRequestTrackId(response: any, variable: any) {
-        const requestTrackId = (response?.headers?.get && response?.headers?.get('x-wm-request-track-id')) || response?.headers['x-wm-request-track-id'];
+    setRequestTrackId(response: any = {}, variable: any) {
+        response.headers = response.headers || {};
+        const requestTrackId = (response.headers.get && response.headers.get('x-wm-request-track-id')) || response.headers['x-wm-request-track-id'];
         if (requestTrackId) {
             variable._requestTrackId = requestTrackId;
         }
