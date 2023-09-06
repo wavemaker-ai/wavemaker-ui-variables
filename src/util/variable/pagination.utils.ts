@@ -1,7 +1,8 @@
 import { jmespath } from '@metrichor/jmespath';
 
-// declare const _: any;
 import _ from 'lodash';
+import { getValidJSON } from '../utils';
+import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 
 export class PaginationUtils {
     /**
@@ -220,9 +221,15 @@ export class PaginationUtils {
         const paramObj = _.find(operationInfo.parameters, function(obj) { return obj.name === paramName }); 
         // set page/offset and size from pagination if matched parameter's type is header  
         if (paramObj?.parameterType === 'header') {
-            _.set(reqObj, paginationInfo.input[inputParam], variable.pagination['page']);
-            _.set(reqObj, paginationInfo.input.size, variable.pagination['size']);
-            headers[paramName] = JSON.stringify(reqObj[paramName]);
+            const inputBodyParam =  VARIABLE_CONSTANTS.REST_SERVICE.PREFIX.CLOAK_HEADER_KEY + paginationInfo.input[inputParam];               
+            if (inputParam !== 'offset') { 
+                _.set(reqObj, inputBodyParam, variable.pagination['page']);
+            } else {
+                _.set(reqObj, inputBodyParam, this.getOffsetInfo(variable, options));
+            }
+            _.set(reqObj, VARIABLE_CONSTANTS.REST_SERVICE.PREFIX.CLOAK_HEADER_KEY + paginationInfo.input.size, variable.pagination['size']);
+            let headerKey = VARIABLE_CONSTANTS.REST_SERVICE.PREFIX.CLOAK_HEADER_KEY + paramName;
+            headers[headerKey] = typeof reqObj[headerKey] === 'object' ? JSON.stringify(reqObj[headerKey]) : reqObj[headerKey];
             resObj['headers'] = headers;
         } else if (paramObj?.parameterType === 'body') { 
             // set page/offset and size from pagination if matched parameter's type is body 
@@ -304,9 +311,14 @@ export class PaginationUtils {
      */
     static setParameterVal(paramName, res, operationInfo, variable) {
         const paginationInfo = this.getPaginationInfo(operationInfo, variable);
-        const param = paginationInfo.input[paramName].split('.')[0]; 
+        const paginationParams =  paginationInfo.input[paramName].split('.');
+        const param = paginationParams[0]; 
         const sizeObj = _.find(operationInfo.parameters, function(obj) { return obj.name === param });
         res[paramName] = _.result(sizeObj, 'sampleValue');
+        // if input value is configured from object, fetch the value from the specified path
+        if (paginationParams.length > 1) {
+            res[paramName] = _.get(getValidJSON(res[paramName]), paginationInfo.input[paramName].split('.').splice(1).join('.'));
+        }
     }
 
     /**

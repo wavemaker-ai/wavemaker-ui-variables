@@ -6,7 +6,6 @@ import { getAccessToken } from './../oAuth.utils';
 import { formatDate} from "./variables.utils";
 import { PaginationUtils } from '../../util/variable/pagination.utils';
 
-// declare const _: any;
 import _ from 'lodash';
 
 
@@ -65,7 +64,7 @@ const getFormData = (formData, param, paramValue) => {
  * @param params
  * @returns {{requestBody: {}; missingParams: any[]}}
  */
-const processRequestBody = (inputData, params) => {
+const processRequestBody = (inputData, params, variable) => {
     const requestBody = {},
         missingParams = [];
     let paramValue;
@@ -73,7 +72,7 @@ const processRequestBody = (inputData, params) => {
         paramValue = _.get(inputData, param.name);
         if (!_.isUndefined(paramValue) && paramValue !== '' && paramValue !== null && !param.readOnly) {
             // ToDo - variable seperation
-            paramValue = isDateTimeType(param.type) ? formatDate(paramValue, param.type) : paramValue;
+            paramValue = isDateTimeType(param.type) ? formatDate(paramValue, param.type, variable.dateFormatter) : paramValue;
             // Construct ',' separated string if param is not array type but value is an array
             if (_.isArray(paramValue) && _.toLower(extractType(param.type)) === 'string') {
                 paramValue = _.join(paramValue, ',');
@@ -261,7 +260,7 @@ export class ServiceVariableUtils {
                 // Format dateTime params for dataService variables
                 if (variable.serviceType === VARIABLE_CONSTANTS.SERVICE_TYPE.DATA && isDateTimeType(param.type)) {
                     // ToDo - variable seperation
-                    paramValue = formatDate(paramValue, param.type);
+                    paramValue = formatDate(paramValue, param.type, variable.dateFormatter);
                 }
                 // Construct ',' separated string if param is not array type but value is an array
                 if (_.isArray(paramValue) && _.toLower(extractType(param.type)) === 'string' && variable.serviceType === VARIABLE_CONSTANTS.SERVICE_TYPE.DATA) {
@@ -291,7 +290,7 @@ export class ServiceVariableUtils {
                         // For post/put query methods wrap the input
                         if (isBodyTypeQueryProcedure) {
                             setParamsOfChildNode();
-                            bodyInfo = processRequestBody(paramValueInfo, params);
+                            bodyInfo = processRequestBody(paramValueInfo, params, variable);
                             requestBody = bodyInfo.requestBody;
                             requiredParamMissing = _.concat(requiredParamMissing, bodyInfo.missingParams);
                         } else {
@@ -302,7 +301,7 @@ export class ServiceVariableUtils {
                         if (isBodyTypeQueryProcedure && param.name === SWAGGER_CONSTANTS.WM_DATA_JSON) {
                             setParamsOfChildNode();
                             // Process query/procedure formData non-file params params
-                            bodyInfo = processRequestBody(paramValueInfo, params);
+                            bodyInfo = processRequestBody(paramValueInfo, params, variable);
                             requestBody = getFormData(getFormDataObj(), param, bodyInfo.requestBody);
                             requiredParamMissing = _.concat(requiredParamMissing, bodyInfo.missingParams);
                         } else {

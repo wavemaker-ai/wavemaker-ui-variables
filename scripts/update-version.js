@@ -21,6 +21,7 @@ const init = () => {
     updateVariablesPackage('../wavemaker-ng-runtime/package.json');
     updateVariablesPackage('../wavemaker-rn-runtime/package.json');
     updateVariablesPackage('../wavemaker-rn-codegen/src/templates/project/package.json');
+    updateVariablesPackage('../wavemaker-ng-studio/package.json');
 };
 
 init();

@@ -1,4 +1,3 @@
-// declare const X2JS: any;
 // @ts-ignore
 import X2JS from 'x2js';
 import _ from 'lodash';
@@ -170,7 +169,16 @@ export const xmlToJson = (xmlString: string) => {
     const x2jsObj = new X2JS({ 'emptyNodeForm': 'content', 'attributePrefix': '', 'enableToStringFunc': false });
     let json = x2jsObj.xml2js(xmlString);
     if (json) {
-        json = _.get(json, Object.keys(json)[0]);
+        // in x2js version 3.4.4, for simple string, {} is returned.
+        // in this case also, return null to denote conversion failure
+        if (Object.keys(json).length === 0) {
+            json = null;
+        } else if (_.get(json, 'html.body.parsererror')) {
+            // for csv data, the response comes in an object
+            json = null;
+        } else {
+            json = _.get(json, Object.keys(json)[0]);
+        }
     }
     return json;
 };

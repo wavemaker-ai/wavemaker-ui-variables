@@ -8,7 +8,7 @@ import { ServiceVariableManager } from '../../manager/variable/service-variable.
 import { ServiceVariableUtils } from '../../util/variable/service-variable.utils';
 import {HttpClientService} from "../../types/http-client.service";
 
-declare const _: any;
+import _ from 'lodash';
 
 const getManager = (): ServiceVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.SERVICE);

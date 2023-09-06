@@ -2,7 +2,6 @@ import { httpService } from '../../util/variable/variables.utils';
 import { appManager} from './../../util/variable/variables.utils';
 import { AdvancedOptions } from '../../advanced-options';
 
-// declare const _: any;
 import _ from 'lodash';
 
 export abstract class BaseVariableManager {
@@ -27,7 +26,7 @@ export abstract class BaseVariableManager {
      * @param response
      */
     setRequestTrackId(response: any, variable: any) {
-        const requestTrackId = response?.headers?.get('x-wm-request-track-id');
+        const requestTrackId = (response?.headers?.get && response?.headers?.get('x-wm-request-track-id')) || response?.headers['x-wm-request-track-id'];
         if (requestTrackId) {
             variable._requestTrackId = requestTrackId;
         }
@@ -43,14 +42,16 @@ export abstract class BaseVariableManager {
     // ToDo - variable seperation
     httpCall(requestParams, variable, params?: any) {
         return new Promise((resolve, reject) => {
-            variable._observable = variable.httpService.sendCallAsObservable(requestParams, params).subscribe((response: any) => {
-                if (response && response.type) {
+            // send _source info, to identify the call is invoked from framework
+            requestParams['_source'] = 'variable';
+            variable.httpService.sendCall(requestParams, variable).then((response: any) => {
+                if (response && response.type || response && response.status) {
                     this.setRequestTrackId(response, variable);
                     resolve(response);
                 }
             }, (err: any) => {
                 this.setRequestTrackId(err, variable);
-                if (variable.httpService.isPlatformSessionTimeout(err)) {
+                if (variable.httpService.isPlatformSessionTimeout && variable.httpService.isPlatformSessionTimeout(err)) {
                     // send the notification manually to hide any context spinners on page.
                     // [TODO]: any spinners on widget listening on this variable will also go off. Need to see an approach to sovle that.
                     this.notifyInflight(variable, false, err);
