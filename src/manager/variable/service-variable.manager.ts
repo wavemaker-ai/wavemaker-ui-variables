@@ -264,36 +264,40 @@ export class ServiceVariableManager extends BaseVariableManager {
      * @param options
      */
     protected handleRequestMetaError(info, variable, success, errorCB, options) {
-        const err_type = _.get(info, 'error.type');
+        try {
+            const err_type = _.get(info, 'error.type');
 
-        switch (err_type) {
-            case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.NO_ACCESSTOKEN:
-                performAuthorization(undefined, info.securityDefnObj[VARIABLE_CONSTANTS.REST_SERVICE.OAUTH_PROVIDER_KEY], this.invoke.bind(this, variable, options, success, errorCB), null, this.getProviderInfo(variable, info.securityDefnObj['x-WM-PROVIDER_ID']));
-                this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, true, true);
-                break;
-            case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.USER_UNAUTHORISED:
-                info = this.handleAuthError(variable, success, errorCB, options);
-                this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, options.skipNotification, info.error.skipDefaultNotification);
-                break;
-            case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.METADATA_MISSING:
-            case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.CRUD_OPERATION_MISSING:
-                if (info.error.message) {
-                    info.error.message = info.error.message.replace('$variable', variable.name);
-                    let reasons;
-                    if (err_type === VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.METADATA_MISSING) {
-                        reasons = ['1. You did not Preview the app after creating a Variable for the imported service.', '2. You deleted the imported service this Variable is linked to.'];
-                    } else {
-                        reasons = ['1. You haven\'t chosen an endpoint for ' +  options.operation + ' operation for this Entity.'];
-                    }
-                    console.warn(info.error.message + '\n Possible reasons for this:\n ' + reasons.join('\n '));
-                }
-                this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, options.skipNotification, info.error.skipDefaultNotification);
-                break;
-            default:
-                if (info.error.message) {
-                    console.warn(info.error.message, variable.name);
+            switch (err_type) {
+                case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.NO_ACCESSTOKEN:
+                    performAuthorization(undefined, info.securityDefnObj[VARIABLE_CONSTANTS.REST_SERVICE.OAUTH_PROVIDER_KEY], this.invoke.bind(this, variable, options, success, errorCB), null, this.getProviderInfo(variable, info.securityDefnObj['x-WM-PROVIDER_ID']));
+                    this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, true, true);
+                    break;
+                case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.USER_UNAUTHORISED:
+                    info = this.handleAuthError(variable, success, errorCB, options);
                     this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, options.skipNotification, info.error.skipDefaultNotification);
-                }
+                    break;
+                case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.METADATA_MISSING:
+                case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.CRUD_OPERATION_MISSING:
+                    if (info.error.message) {
+                        info.error.message = info.error.message.replace('$variable', variable.name);
+                        let reasons;
+                        if (err_type === VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.METADATA_MISSING) {
+                            reasons = ['1. You did not Preview the app after creating a Variable for the imported service.', '2. You deleted the imported service this Variable is linked to.'];
+                        } else {
+                            reasons = ['1. You haven\'t chosen an endpoint for ' +  options.operation + ' operation for this Entity.'];
+                        }
+                        console.warn(info.error.message + '\n Possible reasons for this:\n ' + reasons.join('\n '));
+                    }
+                    this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, options.skipNotification, info.error.skipDefaultNotification);
+                    break;
+                default:
+                    if (info.error.message) {
+                        console.warn(info.error.message, variable.name);
+                        this.processErrorResponse(variable, info.error.message, errorCB, options.xhrObj, options.skipNotification, info.error.skipDefaultNotification);
+                    }
+            }
+        } catch(err) {
+            console.error(err);
         }
         return info;
     }
@@ -467,6 +471,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             const info = this.handleRequestMetaError(requestParams, variable, success, error, options);
             const reason = (_.get(info, 'error.message') || 'An error occurred while triggering the variable: ') + ': ' +  variable.name;
             triggerFn(error);
+            $queue.process(variable);
             return Promise.reject(reason);
         }
 
