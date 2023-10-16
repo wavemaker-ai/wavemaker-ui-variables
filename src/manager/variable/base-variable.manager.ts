@@ -45,7 +45,7 @@ export abstract class BaseVariableManager {
         return new Promise((resolve, reject) => {
             // send _source info, to identify the call is invoked from framework
             requestParams['_source'] = 'variable';
-            variable.httpService.sendCall(requestParams, variable).then((response: any) => {
+            variable.httpService.sendCall(requestParams, variable, params).then((response: any) => {
                 if (response && response.type || response && response.status) {
                     this.setRequestTrackId(response, variable);
                     resolve(response);
