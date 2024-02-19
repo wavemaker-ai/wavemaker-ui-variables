@@ -484,7 +484,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         }
 
         // file download
-        if (operationInfo && _.isArray(operationInfo.produces) && _.includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM)) {
+        if (operationInfo && _.isArray(operationInfo.produces) && _.includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM) && variable.simulateFileDownload) {
             // ToDo - variable seperation
             return variable.simulateFileDownload(requestParams, variable.dataBinding.file || variable.name, variable.dataBinding.exportType, function () {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
