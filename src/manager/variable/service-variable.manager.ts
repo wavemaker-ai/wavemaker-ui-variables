@@ -494,7 +494,7 @@ export class ServiceVariableManager extends BaseVariableManager {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, null, null, null);
                 $queue.process(variable);
                 triggerFn(error);
-            });
+            },variable.dataBinding);
         }
 
         // notify variable progress

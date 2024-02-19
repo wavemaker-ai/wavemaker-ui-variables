@@ -252,7 +252,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, null, null, null);
                 $queue.process(variable);
                 triggerFn(error);
-            });
+            }, variable.dataBinding);
         }
 
         // notify variable progress
