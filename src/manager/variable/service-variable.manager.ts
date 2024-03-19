@@ -536,7 +536,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             // this can be used to cancel the variable calls.
             variable.httpService.sendCall(requestParams, variable).then((response) => {
                 successHandler(response, resolve);
-            }, err => {
+            }).catch(err => {
                 const validJSON = getValidJSON(err.error);
                 err.error = isDefined(validJSON) ? validJSON : err.error;
                 errorHandler(err, reject);
