@@ -537,6 +537,8 @@ export class ServiceVariableManager extends BaseVariableManager {
             variable.httpService.sendCall(requestParams, variable).then((response) => {
                 successHandler(response, resolve);
             }).catch(err => {
+                err = err || {};
+                err.error = err.error || '{}';
                 const validJSON = getValidJSON(err.error);
                 err.error = isDefined(validJSON) ? validJSON : err.error;
                 errorHandler(err, reject);
