@@ -95,7 +95,7 @@ export class PaginationUtils {
             }
         } else if (_.startsWith(item, '$header')) { // if the item has header, resolve the expression against the response headers 
             const headerKey = item.replace('$header.', '');
-            const headers =  (<any>Object).fromEntries(resHeaders.headers);
+            const headers =  (<any>Object).fromEntries(resHeaders?.headers || resHeaders);
             const headerParams = headerKey.split('.');
             try {
                 res[key] = jmespath.search(headers, headerParams[0].toLowerCase());
@@ -171,7 +171,7 @@ export class PaginationUtils {
         const paramName = paginationInfo.input[inputParam].split('.')[0]; 
         const paramObj = _.find(operationInfo.parameters, function(obj) { return obj.name === paramName });   
         // check if the variable has query params and they are not empty
-        if (!_.isEmpty(variable.dataBinding) && paramObj && paramObj.parameterType === 'query') {
+        if (paramObj && paramObj.parameterType === 'query') {
             /**
              * For pagination type other than offset, assign page which is recieved from options
              * For offset type, calculate page from size and options[page]
