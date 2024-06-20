@@ -484,7 +484,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         }
 
         // file download
-        if (operationInfo && _.isArray(operationInfo.produces) && _.includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM)) {
+        if (operationInfo && _.isArray(operationInfo.produces) && _.includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM) && variable.simulateFileDownload) {
             // ToDo - variable seperation
             return variable.simulateFileDownload(requestParams, variable.dataBinding.file || variable.name, variable.dataBinding.exportType, function () {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
@@ -494,7 +494,7 @@ export class ServiceVariableManager extends BaseVariableManager {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, null, null, null);
                 $queue.process(variable);
                 triggerFn(error);
-            });
+            },variable.dataBinding);
         }
 
         // notify variable progress
@@ -536,7 +536,9 @@ export class ServiceVariableManager extends BaseVariableManager {
             // this can be used to cancel the variable calls.
             variable.httpService.sendCall(requestParams, variable).then((response) => {
                 successHandler(response, resolve);
-            }, err => {
+            }).catch(err => {
+                err = err || {};
+                err.error = err.error || '{}';
                 const validJSON = getValidJSON(err.error);
                 err.error = isDefined(validJSON) ? validJSON : err.error;
                 errorHandler(err, reject);
