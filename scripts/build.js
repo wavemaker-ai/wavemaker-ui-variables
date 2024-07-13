@@ -43,11 +43,18 @@ async function postBuild(runtimeVersion) {
     console.log('Post Build successful!!!');
 }
 
-async function prepareNpmPackages() {
+async function prepareNpmPackages(runtimeVersion) {
     fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/variables`, {
         filter: p => !p.startsWith('/node_modules/')
     });
-    await execa('tar', ['-czf', 'dist/npm-packages/variables.tar.gz', '-C', 'dist/npm-packages', 'variables']);
+    //this check is required for repeat builds in local builds to avoid unnecessary copy time
+    if(!fs.existsSync(`${projectDir}/node_modules/.bin`)){
+        fs.copySync(`${projectDir}/node_modules`, `${projectDir}/dist/npm-packages/variables/node_modules`);
+    }
+    await execa('npm', ['pack'], {
+        'cwd': `${projectDir}/dist/npm-packages/variables`
+    });
+    fs.copySync(`${projectDir}/dist/npm-packages/variables/wavemaker-variables-${runtimeVersion}.tgz`, `${projectDir}/dist/npm-packages/wavemaker-variables-${runtimeVersion}.tgz`);
 }
 
 async function pushToLocalRepo() {
@@ -72,7 +79,7 @@ yargs(hideBin(process.argv)).command('post-build',
     }, (argv) => {
         postBuild(argv.runtimeVersion).then(() => {
             if (argv.production) {
-                return prepareNpmPackages();
+                return prepareNpmPackages(argv.runtimeVersion);
             } else {
                 return pushToLocalRepo();
             }
