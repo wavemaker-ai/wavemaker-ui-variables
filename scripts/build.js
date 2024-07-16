@@ -48,7 +48,7 @@ async function prepareNpmPackages(runtimeVersion) {
         filter: p => !p.startsWith('/node_modules/')
     });
     //this check is required for repeat builds in local builds to avoid unnecessary copy time
-    if(!fs.existsSync(`${projectDir}/node_modules/.bin`)){
+    if(!fs.existsSync(`${projectDir}/dist/npm-packages/variables/node_modules/.bin`)) {
         fs.copySync(`${projectDir}/node_modules`, `${projectDir}/dist/npm-packages/variables/node_modules`);
     }
     await execa('npm', ['pack'], {
