@@ -14,7 +14,6 @@
   },
   "author": "",
   "license": "ISC",
-  "bundledDependencies": true,
   "devDependencies": {
     "execa": "^5.0.0",
     "fs-extra": "^11.1.0",

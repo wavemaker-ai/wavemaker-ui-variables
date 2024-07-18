@@ -47,10 +47,12 @@ async function prepareNpmPackages(runtimeVersion) {
     fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/variables`, {
         filter: p => !p.startsWith('/node_modules/')
     });
-    //this check is required for repeat builds in local builds to avoid unnecessary copy time
-    if(!fs.existsSync(`${projectDir}/dist/npm-packages/variables/node_modules/.bin`)) {
-        fs.copySync(`${projectDir}/node_modules`, `${projectDir}/dist/npm-packages/variables/node_modules`);
-    }
+    await execa('npm', ['install'], {
+        'cwd': `${projectDir}/dist/npm-packages/variables`
+    });
+    await execa('npm', ['shrinkwrap'], {
+        'cwd': `${projectDir}/dist/npm-packages/variables`
+    });
     await execa('npm', ['pack'], {
         'cwd': `${projectDir}/dist/npm-packages/variables`
     });
