@@ -44,19 +44,20 @@ async function postBuild(runtimeVersion) {
 }
 
 async function prepareNpmPackages(runtimeVersion) {
-    fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/variables`, {
+    let tarballName=`wavemaker-variables-${runtimeVersion}.tgz`
+    fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/package`, {
         filter: p => !p.startsWith('/node_modules/')
     });
     await execa('npm', ['install'], {
-        'cwd': `${projectDir}/dist/npm-packages/variables`
+        'cwd': `${projectDir}/dist/npm-packages/package`
     });
-    await execa('npm', ['shrinkwrap'], {
-        'cwd': `${projectDir}/dist/npm-packages/variables`
+    fs.rmSync( `${projectDir}/dist/npm-packages/package/node_modules`, {recursive:true, force:true} )
+    await execa('tar', ['-czf', `dist/npm-packages/${tarballName}`, '-C', 'dist/npm-packages', 'package'], {
+        'cwd': `${projectDir}`
     });
-    await execa('npm', ['pack'], {
-        'cwd': `${projectDir}/dist/npm-packages/variables`
-    });
-    fs.copySync(`${projectDir}/dist/npm-packages/variables/wavemaker-variables-${runtimeVersion}.tgz`, `${projectDir}/dist/npm-packages/wavemaker-variables-${runtimeVersion}.tgz`);
+    let tarballPath = path.join(__dirname, `../dist/npm-packages/${tarballName}`)
+    const { stdout } = await execa('node', ['../process-npm-package-stats.js', `--path=${tarballPath}`, '--packageName=@wavemaker/variables', `--publishVersion=${runtimeVersion}`]);
+    console.log(stdout);
 }
 
 async function pushToLocalRepo() {
