@@ -360,7 +360,6 @@ export const getTargetNodeKey = (target) => {
 export const setValueToNode = (target, obj, root, variable, value, noUpdate?) => {
     const targetNodeKey = getTargetNodeKey(target),
         targetObj = getTargetObj(obj, root, variable);
-    value = !_.isUndefined(value) ? value : obj.value;
     /* sanity check, user can bind parent nodes to non-object values, so child node bindings may fail */
     if (targetObj) {
         targetObj[targetNodeKey] = value;
