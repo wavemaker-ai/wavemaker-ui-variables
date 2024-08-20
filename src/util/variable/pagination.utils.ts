@@ -192,7 +192,7 @@ export class PaginationUtils {
      * @returns {object} Returns the next offset number
      */
     static getOffsetInfo(variable, options) {
-        return variable.pagination['size'] * (options['page'] ? (options['page'] - 1) : 1);
+        return variable.pagination['size'] * (options['page'] ? (options['page'] - 1) : 0);
     }
 
     /**
