@@ -76,7 +76,7 @@ export abstract class BaseVariable implements EventNotifier {
                 root = getTarget(this),
             targetObj = getTargetObj(obj, root, this),
             targetNodeKey = getTargetNodeKey(target);
-        if (newVal === oldVal) {
+        if ((newVal === oldVal && _.isUndefined(newVal)) || (_.isUndefined(newVal) && (!_.isUndefined(oldVal) || !_.isUndefined(targetObj[targetNodeKey])))) {
             return;
         }
         // Skip cloning for blob column
