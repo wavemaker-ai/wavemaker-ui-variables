@@ -1,17 +1,33 @@
-import { getClonedObject, getValidJSON, isDefined, isPageable, isValidWebURL, triggerFn, noop, xmlToJson } from "../../util/utils";
+import {
+    getClonedObject,
+    getValidJSON,
+    isDefined,
+    isPageable,
+    isValidWebURL,
+    noop,
+    triggerFn,
+    xmlToJson
+} from "../../util/utils";
 
-import { upload } from '../../util/file-upload.util';
-import { ServiceVariable } from '../../model/variable/service-variable';
-import { ServiceVariableUtils } from '../../util/variable/service-variable.utils';
-import { $queue } from '../../util/inflight-queue';
-import { BaseVariableManager } from './base-variable.manager';
-import { CONSTANTS, VARIABLE_CONSTANTS, WS_CONSTANTS } from '../../constants/variables.constants';
-import { appManager, formatExportExpression, setInput, decodeData, metadataService, getErrMessage } from './../../util/variable/variables.utils';
-import { getEvaluatedOrderBy, initiateCallback, securityService } from '../../util/variable/variables.utils';
-import { getAccessToken, performAuthorization, removeAccessToken } from '../../util/oAuth.utils';
-import { AdvancedOptions } from '../../advanced-options';
-import { PaginationUtils } from '../../util/variable/pagination.utils';
-import { VariableEvents } from "../../model/base-variable";
+import {upload} from '../../util/file-upload.util';
+import {ServiceVariable} from '../../model/variable/service-variable';
+import {ServiceVariableUtils} from '../../util/variable/service-variable.utils';
+import {$queue} from '../../util/inflight-queue';
+import {BaseVariableManager} from './base-variable.manager';
+import {CONSTANTS, VARIABLE_CONSTANTS, WS_CONSTANTS} from '../../constants/variables.constants';
+import {
+    appManager,
+    decodeData,
+    formatExportExpression,
+    getErrMessage,
+    metadataService,
+    setInput
+} from './../../util/variable/variables.utils';
+import {getEvaluatedOrderBy, initiateCallback, securityService} from '../../util/variable/variables.utils';
+import {getAccessToken, performAuthorization, removeAccessToken} from '../../util/oAuth.utils';
+import {AdvancedOptions} from '../../advanced-options';
+import {PaginationUtils} from '../../util/variable/pagination.utils';
+import {VariableEvents} from "../../model/base-variable";
 
 import _ from "lodash";
 
@@ -172,7 +188,18 @@ export class ServiceVariableManager extends BaseVariableManager {
             this.fileUploadCount++;
             this.successFileUploadCount++;
             this.fileUploadResponse.push(data[0]);
-            if (this.totalFilesCount === this.fileUploadCount) {
+            if (data && data[0] && data[0].success === false) {
+                if (variable._progressObservable) {
+                    variable._progressObservable.next({
+                        'status': "error",
+                        'fileName': file.name,
+                        'errMsg': data[0].errorMessage
+                    });
+                }
+                this.fileUploadResponse = [];
+                this.processErrorResponse(variable, data[0].errorMessage, error, data, options.skipNotification);
+            }
+            if (this.totalFilesCount === this.fileUploadCount && data[0].success === true) {
                 if (this.failedFileUploadCount === 0) {
                     this.processSuccessResponse(this.fileUploadResponse, variable, options, success);
                     this.fileUploadResponse = [];
