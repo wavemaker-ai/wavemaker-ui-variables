@@ -188,6 +188,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             this.fileUploadCount++;
             this.successFileUploadCount++;
             this.fileUploadResponse.push(data[0]);
+            file._response = data[0];
             if (data && data[0] && data[0].success === false) {
                 if (variable._progressObservable) {
                     variable._progressObservable.next({
@@ -533,6 +534,10 @@ export class ServiceVariableManager extends BaseVariableManager {
                 const data = this.processSuccessResponse(res, variable, _.extend(options, {'xhrObj': response}), success, response.headers);
                 // notify variable success
                 this.notifyInflight(variable, false, data);
+                if (ServiceVariableUtils.isFileDeleteRequest(variable)) {
+                    variable._deleteFileObservable.next({'status' : "success", response: res});
+                    appManager && appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_DELETE_SUCCESS || "File delete success", 'success');
+                }
                 resolve(response);
             }
         };
@@ -542,6 +547,14 @@ export class ServiceVariableManager extends BaseVariableManager {
             // notify variable error
             this.notifyInflight(variable, false);
             this.processErrorResponse(variable, errMsg, error, err, options.skipNotification);
+            if (ServiceVariableUtils.isFileDeleteRequest(variable)) {
+                variable._deleteFileObservable.error({
+                    status : "error",
+                    error: errMsg,
+                    details: err
+                });
+                appManager && appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_DELETE_ERROR || 'File delete failed', 'error');
+            }
             reject({
                 error: errMsg,
                 details: err

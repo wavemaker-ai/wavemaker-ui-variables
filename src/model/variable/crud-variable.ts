@@ -22,6 +22,7 @@ export class CrudVariable extends ApiAwareVariable implements IDataSource {
     _progressObservable;
     // Used to track a variable http call, so that it can be cancelled at any point of time during its execution
     _observable;
+    _deleteFileObservable;
     pagination;
     list;
     create;

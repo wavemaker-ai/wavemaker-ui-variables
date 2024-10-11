@@ -402,6 +402,10 @@ export class ServiceVariableUtils {
         return variable.service === 'FileService' && variable.operation === 'uploadFile';
     }
 
+    static isFileDeleteRequest(variable) {
+        return variable.service === 'FileService' && variable.operation === 'deleteFile';
+    }
+
     /**
      * This method returns array of query param names for variable other then page,size,sort
      * @params {params} params of the variable
