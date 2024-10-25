@@ -194,7 +194,8 @@ export class ServiceVariableManager extends BaseVariableManager {
                     variable._progressObservable.next({
                         'status': "error",
                         'fileName': file.name,
-                        'errMsg': data[0].errorMessage
+                        'errMsg': data[0].errorMessage,
+                        'uniqueId': file.uniqueId
                     });
                 }
                 this.fileUploadResponse = [];
@@ -227,7 +228,8 @@ export class ServiceVariableManager extends BaseVariableManager {
                 variable._progressObservable.next({
                     'status': "error",
                     'fileName': file.name,
-                    'errMsg': errMsg
+                    'errMsg': errMsg,
+                    'uniqueId': file.uniqueId
                 });
             }
             if (this.totalFilesCount === this.fileUploadCount) {
@@ -243,7 +245,8 @@ export class ServiceVariableManager extends BaseVariableManager {
                 variable._progressObservable.next({
                     'progress': data,
                     'status': VARIABLE_CONSTANTS.EVENT.PROGRESS,
-                    'fileName': file.name});
+                    'fileName': file.name,
+                    'uniqueId': file.uniqueId});
             }
             initiateCallback(VARIABLE_CONSTANTS.EVENT.PROGRESS, variable, data);
             return data;
