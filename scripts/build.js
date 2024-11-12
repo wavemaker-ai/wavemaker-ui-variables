@@ -43,11 +43,20 @@ async function postBuild(runtimeVersion) {
     console.log('Post Build successful!!!');
 }
 
-async function prepareNpmPackages() {
-    fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/variables`, {
+async function prepareNpmPackages(runtimeVersion) {
+    let tarballName=`wavemaker-variables-${runtimeVersion}.tgz`
+    fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/package`, {
         filter: p => !p.startsWith('/node_modules/')
     });
-    await execa('tar', ['-czf', 'dist/npm-packages/variables.tar.gz', '-C', 'dist/npm-packages', 'variables']);
+    await execa('npm', ['install', '--package-lock-only'], {
+        'cwd': `${projectDir}/dist/npm-packages/package`
+    });
+    await execa('tar', ['-czf', `dist/npm-packages/${tarballName}`, '-C', 'dist/npm-packages', 'package'], {
+        'cwd': `${projectDir}`
+    });
+    let tarballPath = path.join(__dirname, `../dist/npm-packages/${tarballName}`)
+    const { stdout } = await execa('node', ['../process-npm-package-stats.js', `--path=${tarballPath}`, '--packageName=@wavemaker/variables', `--publishVersion=${runtimeVersion}`]);
+    console.log(stdout);
 }
 
 async function pushToLocalRepo() {
@@ -72,7 +81,7 @@ yargs(hideBin(process.argv)).command('post-build',
     }, (argv) => {
         postBuild(argv.runtimeVersion).then(() => {
             if (argv.production) {
-                return prepareNpmPackages();
+                return prepareNpmPackages(argv.runtimeVersion);
             } else {
                 return pushToLocalRepo();
             }
