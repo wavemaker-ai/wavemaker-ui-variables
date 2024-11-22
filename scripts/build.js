@@ -43,14 +43,25 @@ async function postBuild(runtimeVersion) {
     console.log('Post Build successful!!!');
 }
 
+async function createPackageLock(path) {
+    await execa('npm', ['install', '--package-lock-only', '--ignore-scripts'], {
+        'cwd': path
+    });
+    const expoPackageJSON = fs.readJSONSync(`${path}/package-lock.json`);
+    Object.values(expoPackageJSON.packages || {}).map(v => {
+        delete v.resolved;
+    });
+    fs.writeJSONSync(`${path}/package-lock.json`, expoPackageJSON, {
+        spaces: 4
+    });
+}
+
 async function prepareNpmPackages(runtimeVersion) {
     let tarballName=`wavemaker-variables-${runtimeVersion}.tgz`
     fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/package`, {
         filter: p => !p.startsWith('/node_modules/')
     });
-    await execa('npm', ['install', '--package-lock-only'], {
-        'cwd': `${projectDir}/dist/npm-packages/package`
-    });
+    await createPackageLock(`${projectDir}/dist/npm-packages/package`);
     await execa('tar', ['-czf', `dist/npm-packages/${tarballName}`, '-C', 'dist/npm-packages', 'package'], {
         'cwd': `${projectDir}`
     });
