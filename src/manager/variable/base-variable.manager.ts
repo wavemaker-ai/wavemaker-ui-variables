@@ -2,7 +2,7 @@ import { httpService } from '../../util/variable/variables.utils';
 import { appManager} from './../../util/variable/variables.utils';
 import { AdvancedOptions } from '../../advanced-options';
 
-import _ from 'lodash';
+import {extend} from 'lodash-es';
 
 export abstract class BaseVariableManager {
 
@@ -75,7 +75,7 @@ export abstract class BaseVariableManager {
         let options: AdvancedOptions = {};
         options['xhrObj'] = xhrObj;
         if (moreOptions) {
-            _.extend(options, moreOptions);
+            extend(options, moreOptions);
         }
         return options;
     }

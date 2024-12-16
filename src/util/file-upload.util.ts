@@ -2,7 +2,7 @@ import { triggerFn } from './utils';
 
 import { NotifyPromise } from './notify-promise';
 
-import _ from 'lodash';
+import {isArray, forEach, isObject, find, extend} from 'lodash-es';
 
 enum UPLOAD_STATUS {
     QUEUED        = 'queued',
@@ -84,11 +84,11 @@ function uploadWithFileTransfer(file: any, url: any, options: any) {}
 
 function appendFileToFormData(file: any, fd: any, options: any) {
     /* append file to form data */
-    if (_.isArray(file)) {
-        _.forEach(file, function (fileObject: any) {
+    if (isArray(file)) {
+        forEach(file, function (fileObject: any) {
             fd.append(options.paramName, fileObject.content || fileObject, fileObject.name);
         });
-    } else if (_.isObject(file)) {
+    } else if (isObject(file)) {
         fd.append(options.paramName, file.content || file, file.name);
     }
 }
@@ -97,7 +97,7 @@ function appendFileToFormData(file: any, fd: any, options: any) {
 function uploadWithAjax(file: any, variable: any, fd: any, url: any, options: any) {
     const cloneFD = new FormData();
     const iterate = (value: any, key: any) => {
-        const fileObject = (_.isArray(value) ? value[0] : value);
+        const fileObject = (isArray(value) ? value[0] : value);
         if (!(fileObject instanceof File || fileObject instanceof Blob)) {
             cloneFD.append(key, value);
         }
@@ -107,7 +107,7 @@ function uploadWithAjax(file: any, variable: any, fd: any, url: any, options: an
     if (fd.forEach) {
         fd.forEach(iterate);
     } else {
-        _.forEach(fd, iterate);
+        forEach(fd, iterate);
     }
     appendFileToFormData(file, cloneFD, options);
 
@@ -129,7 +129,7 @@ function uploadWithAjax(file: any, variable: any, fd: any, url: any, options: an
 
 /* upload the next file depending on the status */
 function starNextFileTransfer(fts: any) {
-    const ft = _.find(fts, function (f: any) {
+    const ft = find(fts, function (f: any) {
         return f.status === UPLOAD_STATUS.QUEUED;
     });
     if (ft) {
@@ -162,26 +162,26 @@ function isMobileApp() {
  *  One can also abort the upload by simply calling abort function.
  */
 export function upload(files: any, variable: any, fd: any, config: any, options?: any) {
-    options = _.extend({
+    options = extend({
         'paramName' : config.fileParamName
     }, options);
     return uploadWithAjax(files, variable, fd, config.url, options);
     // let fileTransfers = [],
     //     url = config.uploadUrl;
-    // options = _.extend({
+    // options = extend({
     //     'paramName' : config.fileParamName
     // }, options);
     //
     // if (isMobileApp()) {
-    //     _.forEach(files, function (file) {
+    //     forEach(files, function (file) {
     //         fileTransfers.push(uploadWithFileTransfer(file, url, options));
     //     });
     // } else if ((window as any).FormData) {
-    //     _.forEach(files, function (file) {
+    //     forEach(files, function (file) {
     //         fileTransfers.push(uploadWithAjax(file, url, options));
     //     });
     // } else {
-    //     _.forEach(files, function (file) {
+    //     forEach(files, function (file) {
     //         fileTransfers.push(uploadWithIframe(file, url, options));
     //     });
     // }

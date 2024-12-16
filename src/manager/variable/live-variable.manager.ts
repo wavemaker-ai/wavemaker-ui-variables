@@ -13,23 +13,23 @@ import { VariableEvents } from "../../model/base-variable";
 
 declare const window;
 const emptyArr = [];
-import _ from 'lodash';
+import {noop, indexOf, isObject, omit, isArray, extend, forEach, join, isUndefined, isEmpty, find, map, filter, get, split, replace, cloneDeep, isNil} from 'lodash-es';
 
 export class LiveVariableManager extends BaseVariableManager {
 
     public initFilterExpressionBinding(variable) {
         const context = variable._context;
-        const destroyFn = context.registerDestroyListener ? context.registerDestroyListener.bind(context) : _.noop;
+        const destroyFn = context.registerDestroyListener ? context.registerDestroyListener.bind(context) : noop;
         // ToDo - variable seperation
         // const filterSubscription = processFilterExpBindNode(context, variable.filterExpressions).subscribe((response: any) => {
         //     if (variable.operation === 'read') {
         //         /* if auto-update set for the variable with read operation only, get its data */
-        //         if (variable.autoUpdate && !_.isUndefined(response.newVal) && _.isFunction(variable.update)) {
+        //         if (variable.autoUpdate && !isUndefined(response.newVal) && isFunction(variable.update)) {
         //             debounceVariableCall(variable, 'update');
         //         }
         //     } else {
         //         /* if auto-update set for the variable with read operation only, get its data */
-        //         if (variable.autoUpdate && !_.isUndefined(response.newVal) && _.isFunction(variable[variable.operation + 'Record'])) {
+        //         if (variable.autoUpdate && !isUndefined(response.newVal) && isFunction(variable[variable.operation + 'Record'])) {
         //             debounceVariableCall(variable, variable.operation + 'Record');
         //         }
         //     }
@@ -98,7 +98,7 @@ export class LiveVariableManager extends BaseVariableManager {
         const traverseCallbackFn = function (parentFilExpObj, filExpObj) {
             if (filExpObj
                 && filExpObj.required
-                && ((_.indexOf(['null', 'isnotnull', 'empty', 'isnotempty', 'nullorempty'], filExpObj.matchMode) === -1) && filExpObj.value === '')) {
+                && ((indexOf(['null', 'isnotnull', 'empty', 'isnotempty', 'nullorempty'], filExpObj.matchMode) === -1) && filExpObj.value === '')) {
                 isRequiredFieldAbsent = true;
                 return false;
             }
@@ -183,7 +183,7 @@ export class LiveVariableManager extends BaseVariableManager {
         //  EVENT: ON_BEFORE_UPDATE
         output = initiateCallback(VARIABLE_CONSTANTS.EVENT.BEFORE_UPDATE, variable, this.getDataFilterObj(clonedFields), options);
         // if filterFields are updated or modified inside the onBeforeUpdate event then in device use these fields to filter.
-        const updateFilterFields = _.isObject(output) ? getClonedObject(output) : undefined;
+        const updateFilterFields = isObject(output) ? getClonedObject(output) : undefined;
         if (output === false) {
             $queue.process(variable);
             // $rootScope.$emit('toggle-variable-state', variable, false);
@@ -193,7 +193,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
         variable.canUpdate = false;
 
-        tableOptions = LiveVariableUtils.prepareTableOptions(variable, options, _.isObject(output) ? output : clonedFields);
+        tableOptions = LiveVariableUtils.prepareTableOptions(variable, options, isObject(output) ? output : clonedFields);
 
         //  if tableOptions object has query then set the dbOperation to 'searchTableDataWithQuery'
         if (options.searchWithQuery) {
@@ -220,10 +220,10 @@ export class LiveVariableManager extends BaseVariableManager {
             if (response && (response.type || response.status)) {
                 response = response.body || response.data;
                 dataObj.data = response.content;
-                dataObj.pagination = _.omit(response, 'content');
+                dataObj.pagination = omit(response, 'content');
                 const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(response, {pagination: dataObj.pagination});
 
-                if ((response && response.error) || !response || !_.isArray(response.content)) {
+                if ((response && response.error) || !response || !isArray(response.content)) {
                     this.handleError(variable, error, response.error, options, advancedOptions);
                     return Promise.reject(response.error);
                 }
@@ -262,7 +262,7 @@ export class LiveVariableManager extends BaseVariableManager {
         };
         getEntityError = (e: any, reject: any) => {
             this.setVariableOptions(variable, options);
-            this.handleError(variable, error, e.error, _.extend(options, {errorDetails: e.details}));
+            this.handleError(variable, error, e.error, extend(options, {errorDetails: e.details}));
 
             return reject(e.error);
         };
@@ -322,35 +322,35 @@ export class LiveVariableManager extends BaseVariableManager {
             triggerFn(error);
             return Promise.reject('Call stopped from the event: ' + VARIABLE_CONSTANTS.EVENT.BEFORE_UPDATE);
         }
-        inputFields = _.isObject(output) ? output : clonedFields;
+        inputFields = isObject(output) ? output : clonedFields;
         variable.canUpdate = false;
 
         if (options.row) {
             rowObject = options.row;
             // For datetime types, convert the value to the format accepted by backend
-            _.forEach(rowObject, (value, key) => {
+            forEach(rowObject, (value, key) => {
                 const fieldType = LiveVariableUtils.getFieldType(key, variable);
                 let fieldValue;
                 if (isDateTimeType(fieldType)) {
                     fieldValue = formatDate(value, fieldType, variable.dateFormatter);
                     rowObject[key] = fieldValue;
-                } else if (_.isArray(value) && LiveVariableUtils.isStringType(fieldType)) {
+                } else if (isArray(value) && LiveVariableUtils.isStringType(fieldType)) {
                     // Construct ',' separated string if param is not array type but value is an array
-                    fieldValue = _.join(value, ',');
+                    fieldValue = join(value, ',');
                     rowObject[key] = fieldValue;
                 }
             });
             // Merge inputFields along with dataObj while making Insert/Update/Delete
-            _.forEach(inputFields, (attrValue, attrName) => {
+            forEach(inputFields, (attrValue, attrName) => {
                 if ((isDefined(attrValue) && attrValue !== '') && (!isDefined(rowObject[attrName]) || rowObject[attrName] === '')) {
                     rowObject[attrName] = attrValue;
                 }
             });
         } else {
-            _.forEach(inputFields, (fieldValue, fieldName) => {
+            forEach(inputFields, (fieldValue, fieldName) => {
                 let fieldType;
                 const primaryKeys = variable.propertiesMap.primaryFields || variable.propertiesMap.primaryKeys;
-                if (!_.isUndefined(fieldValue) && fieldValue !== '') {
+                if (!isUndefined(fieldValue) && fieldValue !== '') {
                     /*For delete action, the inputFields need to be set in the request URL. Hence compositeId is set.
                      * For insert action inputFields need to be set in the request data. Hence rowObject is set.
                      * For update action, both need to be set.*/
@@ -368,15 +368,15 @@ export class LiveVariableManager extends BaseVariableManager {
                         fieldType = LiveVariableUtils.getFieldType(fieldName, variable);
                         if (isDateTimeType(fieldType)) {
                             fieldValue = formatDate(fieldValue, fieldType, variable.dateFormatter);
-                        } else if (_.isArray(fieldValue) && LiveVariableUtils.isStringType(fieldType)) {
+                        } else if (isArray(fieldValue) && LiveVariableUtils.isStringType(fieldType)) {
                             // Construct ',' separated string if param is not array type but value is an array
-                            fieldValue = _.join(fieldValue, ',');
+                            fieldValue = join(fieldValue, ',');
                         }
                         rowObject[fieldName] = fieldValue;
                     }
                     // for related entities, clear the blob type fields
-                    if (_.isObject(fieldValue) && !_.isArray(fieldValue)) {
-                        _.forEach(fieldValue, (val, key) => {
+                    if (isObject(fieldValue) && !isArray(fieldValue)) {
+                        forEach(fieldValue, (val, key) => {
                             if (LiveVariableUtils.getFieldType(fieldName, variable, key) === 'blob') {
                                 fieldValue[key] = val === null ? val : '';
                             }
@@ -432,7 +432,7 @@ export class LiveVariableManager extends BaseVariableManager {
                         });
                     }
                     options.compositeKeysData = compositeKeysData;
-                } else if (!_.isEmpty(rowObject)) {
+                } else if (!isEmpty(rowObject)) {
                     primaryKey.forEach(key => {
                         if (key.indexOf('.') === -1) {
                             id = rowObject[key];
@@ -477,7 +477,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
         /*Set the "data" in the request to "undefined" if there is no data.
         * This handles cases such as "Delete" requests where data should not be passed.*/
-        if (_.isEmpty(rowObject) && action === 'deleteTableData') {
+        if (isEmpty(rowObject) && action === 'deleteTableData') {
             rowObject = undefined;
         }
 
@@ -491,7 +491,7 @@ export class LiveVariableManager extends BaseVariableManager {
             'service': variable._prefabName ? '' : 'services',
             'dataModelName': dbName,
             'entityName': variable.type,
-            'id': !_.isUndefined(options.id) ? encodeURIComponent(options.id) : compositeId,
+            'id': !isUndefined(options.id) ? encodeURIComponent(options.id) : compositeId,
             'data': rowObject,
             'url': variable._prefabName ? ($rootScope.project.deployedUrl + '/prefabs/' + variable._prefabName) : $rootScope.project.deployedUrl
         };
@@ -716,13 +716,13 @@ export class LiveVariableManager extends BaseVariableManager {
     public setFilter(variable, key, val) {
         let paramObj: any = {},
             targetObj: any = {};
-        if (_.isObject(key)) {
+        if (isObject(key)) {
             paramObj = key;
         } else {
             paramObj[key] = val;
         }
 
-        if (!variable.filterExpressions || _.isEmpty(variable.filterExpressions)) {
+        if (!variable.filterExpressions || isEmpty(variable.filterExpressions)) {
             variable.filterExpressions = {'condition': 'AND', 'rules': []};
         }
         targetObj = variable.filterExpressions;
@@ -740,7 +740,7 @@ export class LiveVariableManager extends BaseVariableManager {
             return existingCriteria;
         }
 
-        _.forEach(paramObj, function (paramVal, paramKey) {
+        forEach(paramObj, function (paramVal, paramKey) {
             const existingCriteria = getExistingCriteria(paramKey);
             if (existingCriteria !== null) {
                 existingCriteria.value = paramVal;
@@ -828,16 +828,16 @@ export class LiveVariableManager extends BaseVariableManager {
         if (!variable.propertiesMap) {
             return;
         }
-        result = _.find(variable.propertiesMap.columns || [], {'fieldName': relatedField});
+        result = find(variable.propertiesMap.columns || [], {'fieldName': relatedField});
         // if related field name passed, get its type from columns inside the current field
         if (result) {
             relatedCols = result.columns;
-            primaryKeys = _.map(_.filter(relatedCols, 'isPrimaryKey'), 'fieldName');
+            primaryKeys = map(filter(relatedCols, 'isPrimaryKey'), 'fieldName');
             if (primaryKeys.length) {
                 return primaryKeys;
             }
             if (relatedCols && relatedCols.length) {
-                relatedCols = _.find(relatedCols, {'isRelated': false});
+                relatedCols = find(relatedCols, {'isRelated': false});
                 return relatedCols && relatedCols.fieldName;
             }
         }
@@ -853,8 +853,8 @@ export class LiveVariableManager extends BaseVariableManager {
      */
     public getRelatedTableData(variable, columnName, options, success, error) {
         const projectID = $rootScope.project.id || $rootScope.projectName;
-        const relatedTable = _.find(variable.relatedTables, table => table.relationName === columnName || table.columnName === columnName); // Comparing column name to support the old projects
-        const selfRelatedCols = _.map(_.filter(variable.relatedTables, o => o.type === variable.type), 'relationName');
+        const relatedTable = find(variable.relatedTables, table => table.relationName === columnName || table.columnName === columnName); // Comparing column name to support the old projects
+        const selfRelatedCols = map(filter(variable.relatedTables, o => o.type === variable.type), 'relationName');
         const filterFields = [];
         let orderBy,
             filterOptions,
@@ -863,7 +863,7 @@ export class LiveVariableManager extends BaseVariableManager {
             dbOperationOptions,
             getRelatedTableDataSuccess,
             getRelatedTableDataError;
-        _.forEach(options.filterFields, (value, key) => {
+        forEach(options.filterFields, (value, key) => {
             value.fieldName = key;
             value.type = LiveVariableUtils.getFieldType(columnName, variable, key);
             /**
@@ -879,7 +879,7 @@ export class LiveVariableManager extends BaseVariableManager {
         filterOptions = LiveVariableUtils.getFilterOptions(variable, filterFields, options);
         query = LiveVariableUtils.getSearchQuery(filterOptions, ' ' + (options.logicalOp || 'AND') + ' ', variable.ignoreCase);
         if (options.filterExpr) {
-            const _clonedFields = getClonedObject(_.isObject(options.filterExpr) ? options.filterExpr : JSON.parse(options.filterExpr));
+            const _clonedFields = getClonedObject(isObject(options.filterExpr) ? options.filterExpr : JSON.parse(options.filterExpr));
             LiveVariableUtils.processFilterFields(_clonedFields.rules, variable, options);
             const filterExpQuery = LiveVariableUtils.generateSearchQuery(_clonedFields.rules, _clonedFields.condition, variable.ignoreCase, options.skipEncode);
             if (query !== '') {
@@ -892,7 +892,7 @@ export class LiveVariableManager extends BaseVariableManager {
         }
         query = query ? ('q=' + query) : '';
         action = 'searchTableDataWithQuery';
-        orderBy = _.isEmpty(options.orderBy) ? '' : 'sort=' + options.orderBy;
+        orderBy = isEmpty(options.orderBy) ? '' : 'sort=' + options.orderBy;
         dbOperationOptions = {
             projectID: projectID,
             service: variable.getPrefabName() ? '' : 'services',
@@ -910,7 +910,7 @@ export class LiveVariableManager extends BaseVariableManager {
                 const response = res.body || res.data;
                 /*Remove the self related columns from the data. As backend is restricting the self related column to one level, In liveform select, dataset and datavalue object
                  * equality does not work. So, removing the self related columns to acheive the quality*/
-                const data = _.map(response.content, o => _.omit(o, selfRelatedCols));
+                const data = map(response.content, o => omit(o, selfRelatedCols));
 
                 const pagination = Object.assign({}, response);
                 delete pagination.content;
@@ -957,7 +957,7 @@ export class LiveVariableManager extends BaseVariableManager {
         if (tableOptions.query) {
             requestData.filter = tableOptions.query;
         }
-        requestData.groupByFields = _.isArray(options.fields) ? options.fields : [options.fields];
+        requestData.groupByFields = isArray(options.fields) ? options.fields : [options.fields];
         sort = options.sort || requestData.groupByFields[0] + ' asc';
         sort = sort ? 'sort=' + sort : '';
         dbOperationOptions = {
@@ -1014,13 +1014,13 @@ export class LiveVariableManager extends BaseVariableManager {
             Object.defineProperty(variable, 'firstRecord', {
                 'configurable': true,
                 'get': () => {
-                    return _.get(variable.dataSet, 'data[0]', {});
+                    return get(variable.dataSet, 'data[0]', {});
                 }
             });
             Object.defineProperty(variable, 'lastRecord', {
                 'configurable': true,
                 'get': () => {
-                    const data = _.get(variable.dataSet, 'data', []);
+                    const data = get(variable.dataSet, 'data', []);
                     return data[data.length - 1];
                 }
             });
@@ -1035,11 +1035,11 @@ export class LiveVariableManager extends BaseVariableManager {
     public prepareRequestParams(options) {
         let requestParams;
 
-        const searchKeys = _.split(options.searchKey, ','),
-            matchModes = _.split(options.matchMode, ','),
+        const searchKeys = split(options.searchKey, ','),
+            matchModes = split(options.matchMode, ','),
             formFields = {};
 
-        _.forEach(searchKeys, (colName, index) => {
+        forEach(searchKeys, (colName, index) => {
             formFields[colName] = {
                 value: options.query,
                 logicalOp: 'AND',
@@ -1055,7 +1055,7 @@ export class LiveVariableManager extends BaseVariableManager {
             skipToggleState: true, // Dont change the variable toggle state as this is a independent call
             inFlightBehavior: 'executeAll',
             logicalOp: 'OR',
-            orderBy: options.orderby ? _.replace(options.orderby, /:/g, ' ') : ''
+            orderBy: options.orderby ? replace(options.orderby, /:/g, ' ') : ''
         };
 
         if (options.onBeforeservicecall) {
@@ -1087,7 +1087,7 @@ export class LiveVariableManager extends BaseVariableManager {
      * @private
      */
     public upgradeInputDataToFilterExpressions(variable, response, inputData) {
-        if (_.isObject(response)) {
+        if (isObject(response)) {
             inputData = response;
             inputData.condition = 'AND';
             inputData.rules = [];
@@ -1097,11 +1097,11 @@ export class LiveVariableManager extends BaseVariableManager {
          * so we are keeping a copy of it and the emptying the existing object and now fill it with the
          * user set criteria. If its just modified, change the data and push it tohe rules or else just add a new criteria
          */
-        const clonedRules = _.cloneDeep(inputData.rules);
+        const clonedRules = cloneDeep(inputData.rules);
         inputData.rules = [];
-        _.forEach(inputData, function (valueObj, key) {
+        forEach(inputData, function (valueObj, key) {
             if (key !== 'condition' && key !== 'rules') {
-                const filteredObj = _.find(clonedRules, o => o.target === key);
+                const filteredObj = find(clonedRules, o => o.target === key);
                 // if the key is found update the value, else create a new rule obj and add it to the existing rules
                 if (filteredObj) {
                     filteredObj.value = valueObj.value;
@@ -1133,8 +1133,8 @@ export class LiveVariableManager extends BaseVariableManager {
         if (inputData.hasOwnProperty('getFilterFields')) {
             inputData = inputData.getFilterFields();
         }
-        _.forEach(inputData.rules, function (ruleObj) {
-            if (!_.isNil(ruleObj.target) && ruleObj.target !== '') {
+        forEach(inputData.rules, function (ruleObj) {
+            if (!isNil(ruleObj.target) && ruleObj.target !== '') {
                 inputData[ruleObj.target] = {
                     'value': ruleObj.value,
                     'matchMode': ruleObj.matchMode

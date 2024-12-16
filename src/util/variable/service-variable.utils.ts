@@ -6,7 +6,7 @@ import { getAccessToken } from './../oAuth.utils';
 import { formatDate} from "./variables.utils";
 import { PaginationUtils } from '../../util/variable/pagination.utils';
 
-import _ from 'lodash';
+import {includes, toLower, get, isObject, isArray, forEach, isUndefined, join, isEmpty, isNull, concat, toUpper, map, reject} from 'lodash-es';
 
 
 /**
@@ -17,7 +17,7 @@ import _ from 'lodash';
  * @returns {any}
  */
 const isBodyTypeQueryOrProcedure = (variable) => {
-    return (_.includes(['QueryExecution', 'ProcedureExecution'], variable.controller)) && (_.includes(['put', 'post'], variable.operationType));
+    return (includes(['QueryExecution', 'ProcedureExecution'], variable.controller)) && (includes(['put', 'post'], variable.operationType));
 };
 
 /**
@@ -37,17 +37,17 @@ const isQueryServiceVar = (controller: string, serviceType: string) => {
  * @param paramValue - Value which is to be appended to formdata
  */
 const getFormData = (formData, param, paramValue) => {
-    const paramType = _.toLower(extractType(_.get(param, 'items.type') || param.type)),
+    const paramType = toLower(extractType(get(param, 'items.type') || param.type)),
         paramContentType = CONSTANTS.isStudioMode ? param['x-WM-CONTENT_TYPE'] : param.contentType;
     if (isFileUploadSupported()) {
         if ((paramType !== 'file') && (paramContentType === 'string' || !paramContentType)) {
-            if (_.isObject(paramValue)) {
+            if (isObject(paramValue)) {
                 paramValue = JSON.stringify(paramValue);
             }
             formData.append(param.name, paramValue);
         } else {
-            if (_.isArray(paramValue) && paramType === 'file') {
-                _.forEach(paramValue, function (fileObject) {
+            if (isArray(paramValue) && paramType === 'file') {
+                forEach(paramValue, function (fileObject) {
                     formData.append(param.name, (fileObject && fileObject.content) || getBlob(fileObject), fileObject.name);
                 });
             } else {
@@ -68,14 +68,14 @@ const processRequestBody = (inputData, params, variable) => {
     const requestBody = {},
         missingParams = [];
     let paramValue;
-    _.forEach(params, function (param) {
-        paramValue = _.get(inputData, param.name);
-        if (!_.isUndefined(paramValue) && paramValue !== '' && paramValue !== null && !param.readOnly) {
+    forEach(params, function (param) {
+        paramValue = get(inputData, param.name);
+        if (!isUndefined(paramValue) && paramValue !== '' && paramValue !== null && !param.readOnly) {
             // ToDo - variable seperation
             paramValue = isDateTimeType(param.type) ? formatDate(paramValue, param.type, variable.dateFormatter) : paramValue;
             // Construct ',' separated string if param is not array type but value is an array
-            if (_.isArray(paramValue) && _.toLower(extractType(param.type)) === 'string') {
-                paramValue = _.join(paramValue, ',');
+            if (isArray(paramValue) && toLower(extractType(param.type)) === 'string') {
+                paramValue = join(paramValue, ',');
             }
             requestBody[param.name] = paramValue;
         } else if (param.required) {
@@ -100,8 +100,8 @@ const cloakHeadersForProxy = (headers) => {
     const _headers = {},
         UNCLOAKED_HEADERS = VARIABLE_CONSTANTS.REST_SERVICE.UNCLOAKED_HEADERS,
         CLOAK_PREFIX = VARIABLE_CONSTANTS.REST_SERVICE.PREFIX.CLOAK_HEADER_KEY;
-    _.forEach(headers, function (val, key) {
-        if (_.includes(UNCLOAKED_HEADERS, key.toUpperCase())) {
+    forEach(headers, function (val, key) {
+        if (includes(UNCLOAKED_HEADERS, key.toUpperCase())) {
             _headers[key] = val;
         } else {
             _headers[CLOAK_PREFIX + key] = val;
@@ -131,7 +131,7 @@ export class ServiceVariableUtils {
                     'field': '_wmServiceOperationInfo'
                 }
             };
-        } else if (_.isEmpty(operationInfo)) {
+        } else if (isEmpty(operationInfo)) {
             return {
                 'error' : {
                     'type': VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.METADATA_MISSING,
@@ -181,7 +181,7 @@ export class ServiceVariableUtils {
             return formData;
         }
 
-        securityDefnObj = _.get(operationInfo.securityDefinitions, '0');
+        securityDefnObj = get(operationInfo.securityDefinitions, '0');
 
         if (securityDefnObj) {
             switch (securityDefnObj.type) {
@@ -236,17 +236,17 @@ export class ServiceVariableUtils {
         url = isProxyCall ? relativePath : directPath;
 
         /* loop through all the parameters */
-        _.forEach(operationInfo.parameters, function (param) {
+        forEach(operationInfo.parameters, function (param) {
             // Set params based on current workspace
             function setParamsOfChildNode() {
                 if (inputFields) {
                     // specific case for body type query/procedure variable with query params
-                    if (inputFields[param.name] && _.isObject(inputFields[param.name])) {
+                    if (inputFields[param.name] && isObject(inputFields[param.name])) {
                         paramValueInfo = inputFields[param.name];
                     } else {
                         paramValueInfo = inputFields;
                     }
-                    params = _.get(operationInfo, ['definitions', param.type]);
+                    params = get(operationInfo, ['definitions', param.type]);
                 } else {
                     // For Api Designer
                     paramValueInfo = paramValue || {};
@@ -263,13 +263,13 @@ export class ServiceVariableUtils {
                     paramValue = formatDate(paramValue, param.type, variable.dateFormatter);
                 }
                 // Construct ',' separated string if param is not array type but value is an array
-                if (_.isArray(paramValue) && _.toLower(extractType(param.type)) === 'string' && variable.serviceType === VARIABLE_CONSTANTS.SERVICE_TYPE.DATA) {
-                    paramValue = _.join(paramValue, ',');
+                if (isArray(paramValue) && toLower(extractType(param.type)) === 'string' && variable.serviceType === VARIABLE_CONSTANTS.SERVICE_TYPE.DATA) {
+                    paramValue = join(paramValue, ',');
                 }
                 switch (param.parameterType.toUpperCase()) {
                     case 'QUERY':
                         // Ignore null valued query params for queryService variable
-                        if (_.isNull(paramValue) && isQueryServiceVar(variable.controller, variable.serviceType)) {
+                        if (isNull(paramValue) && isQueryServiceVar(variable.controller, variable.serviceType)) {
                             break;
                         }
                         if (!queryParams) {
@@ -292,7 +292,7 @@ export class ServiceVariableUtils {
                             setParamsOfChildNode();
                             bodyInfo = processRequestBody(paramValueInfo, params, variable);
                             requestBody = bodyInfo.requestBody;
-                            requiredParamMissing = _.concat(requiredParamMissing, bodyInfo.missingParams);
+                            requiredParamMissing = concat(requiredParamMissing, bodyInfo.missingParams);
                         } else {
                             requestBody = paramValue;
                         }
@@ -303,7 +303,7 @@ export class ServiceVariableUtils {
                             // Process query/procedure formData non-file params params
                             bodyInfo = processRequestBody(paramValueInfo, params, variable);
                             requestBody = getFormData(getFormDataObj(), param, bodyInfo.requestBody);
-                            requiredParamMissing = _.concat(requiredParamMissing, bodyInfo.missingParams);
+                            requiredParamMissing = concat(requiredParamMissing, bodyInfo.missingParams);
                         } else {
                             requestBody = getFormData(getFormDataObj(), param, paramValue);
                         }
@@ -327,7 +327,7 @@ export class ServiceVariableUtils {
         }
 
         // Setting appropriate content-Type for request accepting request body like POST, PUT, etc
-        if (!_.includes(WS_CONSTANTS.NON_BODY_HTTP_METHODS, _.toUpper(method))) {
+        if (!includes(WS_CONSTANTS.NON_BODY_HTTP_METHODS, toUpper(method))) {
             /*Based on the formData browser will automatically set the content type to 'multipart/form-data' and webkit boundary*/
             if (!(operationInfo.consumes && (operationInfo.consumes[0] === WS_CONSTANTS.CONTENT_TYPES.MULTIPART_FORMDATA))) {
                 headers['Content-Type'] = (operationInfo.consumes && operationInfo.consumes[0]) || 'application/json';
@@ -336,8 +336,8 @@ export class ServiceVariableUtils {
 
         // if the consumes has application/x-www-form-urlencoded and
         // if the http request of given method type can have body send the queryParams as Form Data
-        if (_.includes(operationInfo.consumes, WS_CONSTANTS.CONTENT_TYPES.FORM_URL_ENCODED)
-            && !_.includes(WS_CONSTANTS.NON_BODY_HTTP_METHODS, (method || '').toUpperCase())) {
+        if (includes(operationInfo.consumes, WS_CONSTANTS.CONTENT_TYPES.FORM_URL_ENCODED)
+            && !includes(WS_CONSTANTS.NON_BODY_HTTP_METHODS, (method || '').toUpperCase())) {
             // remove the '?' at the start of the queryParams
             if (queryParams) {
                 requestBody = (requestBody ? requestBody + '&' : '') + queryParams.substring(1);
@@ -411,8 +411,8 @@ export class ServiceVariableUtils {
      * @params {params} params of the variable
      */
     static excludePaginationParams(params) {
-        return _.map(_.reject(params, (param) => {
-            return _.includes(VARIABLE_CONSTANTS.PAGINATION_PARAMS, param.name);
+        return map(reject(params, (param) => {
+            return includes(VARIABLE_CONSTANTS.PAGINATION_PARAMS, param.name);
         }), function (param) {
             return param.name;
         });

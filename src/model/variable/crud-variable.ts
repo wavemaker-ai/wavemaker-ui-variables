@@ -10,7 +10,7 @@ import {CRUDCreate} from '../crud-create';
 import {CRUDUpdate} from '../crud-update';
 import {CRUDDelete} from '../crud-delete';
 
-import _ from 'lodash';
+import {isEmpty} from 'lodash-es';
 
 const getManager = (): CrudVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.CRUD);
@@ -121,7 +121,7 @@ export class CrudVariable extends ApiAwareVariable implements IDataSource {
     }
 
     hasPagination() {
-        return this.controller === VARIABLE_CONSTANTS.CONTROLLER_TYPE.QUERY || !_.isEmpty(this.pagination);
+        return this.controller === VARIABLE_CONSTANTS.CONTROLLER_TYPE.QUERY || !isEmpty(this.pagination);
     }
 
     invoke(options?, success?, error?) {

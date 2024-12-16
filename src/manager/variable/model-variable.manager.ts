@@ -1,25 +1,25 @@
 import { BaseVariableManager } from './base-variable.manager';
 
-import _ from 'lodash';
+import {forEach, isBoolean, isNumber, isObject, isArray, isEmpty} from 'lodash-es';
 
 const checkEmptyObject = (obj: any) => {
-    let isEmpty = true;
-    _.forEach(obj, (value: any) => {
-        if (_.isEmpty(value) && !_.isBoolean(value) && !_.isNumber(value)) {
+    let isEmpt = true;
+    forEach(obj, (value: any) => {
+        if (isEmpty(value) && !isBoolean(value) && !isNumber(value)) {
           return;
         }
-        if (!_.isObject(value)) {
-            isEmpty = false;
-        } else if (_.isArray(value)) {
+        if (!isObject(value)) {
+            isEmpt = false;
+        } else if (isArray(value)) {
             // If array, check if array is empty or if it has only one value and the value is empty
-            isEmpty = _.isEmpty(value) || (value.length === 1 ? _.isEmpty(value[0]) : false);
+            isEmpt = isEmpty(value) || (value.length === 1 ? isEmpty(value[0]) : false);
         } else {
             // If object, loop over the object to check if it is empty or not
-            isEmpty = checkEmptyObject(value);
+            isEmpt = checkEmptyObject(value);
         }
-        return isEmpty; // isEmpty false will break the loop
+        return isEmpt; // isEmpty false will break the loop
     });
-    return isEmpty;
+    return isEmpt;
 };
 
 export class ModelVariableManager extends BaseVariableManager {
@@ -28,7 +28,7 @@ export class ModelVariableManager extends BaseVariableManager {
     * and the object has all fields empty, remove that object
     */
     removeFirstEmptyObject(variable: any) {
-        if (_.isArray(variable.dataSet) && variable.dataSet.length === 1 && checkEmptyObject(variable.dataSet[0])) {
+        if (isArray(variable.dataSet) && variable.dataSet.length === 1 && checkEmptyObject(variable.dataSet[0])) {
             variable.dataSet = [];
         }
     }

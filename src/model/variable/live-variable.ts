@@ -6,7 +6,7 @@ import { ApiAwareVariable } from './api-aware-variable';
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 import { LiveVariableManager } from '../../manager/variable/live-variable.manager';
 import {debounceVariableCall} from "../../util/variable/variables.utils";
-import _ from 'lodash';
+import {isUndefined, includes, forEach, isFunction} from 'lodash-es';
 const getManager = (): LiveVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.LIVE);
 };
@@ -237,11 +237,11 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
 
     invokeOnFiltertExpressionChange(obj, targetNodeKey, newVal, oldVal) {
         console.log('filter expr changed', newVal, oldVal);
-            if ((newVal === oldVal && _.isUndefined(newVal)) || (_.isUndefined(newVal) && !_.isUndefined(oldVal))) {
+            if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && !isUndefined(oldVal))) {
                 return;
             }
             // Skip cloning for blob column
-            if (!_.includes(['blob', 'file'], obj.type)) {
+            if (!includes(['blob', 'file'], obj.type)) {
                 newVal = getClonedObject(newVal);
             }
             // backward compatibility: where we are allowing the user to bind complete object
@@ -249,7 +249,7 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
                 // remove the existing databinding element
                 this.filterExpressions.rules = [];
                 // now add all the returned values
-                _.forEach(newVal, function (value, target) {
+                forEach(newVal, function (value, target) {
                     this.filterExpressions.rules.push({
                         'target': target,
                         'value': value,
@@ -264,12 +264,12 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
             }
         if (this.operation === 'read') {
             /* if auto-update set for the variable with read operation only, get its data */
-            if (this.autoUpdate && !_.isUndefined(newVal) && _.isFunction(this.update)) {
+            if (this.autoUpdate && !isUndefined(newVal) && isFunction(this.update)) {
                 debounceVariableCall(this, 'update');
             }
         } else {
             /* if auto-update set for the variable with read operation only, get its data */
-            if (this.autoUpdate && !_.isUndefined(newVal) && _.isFunction(this[this.operation + 'Record'])) {
+            if (this.autoUpdate && !isUndefined(newVal) && isFunction(this[this.operation + 'Record'])) {
                 debounceVariableCall(this, this.operation + 'Record');
             }
         }

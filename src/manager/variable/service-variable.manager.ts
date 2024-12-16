@@ -29,7 +29,7 @@ import {AdvancedOptions} from '../../advanced-options';
 import {PaginationUtils} from '../../util/variable/pagination.utils';
 import {VariableEvents} from "../../model/base-variable";
 
-import _ from "lodash";
+import {isEmpty, get, head, last, hasIn, isObject, isArray, values, find, forEach, isString, includes, omit, extend, map, split} from 'lodash-es';
 
 export class ServiceVariableManager extends BaseVariableManager {
 
@@ -50,14 +50,14 @@ export class ServiceVariableManager extends BaseVariableManager {
      */
     protected processErrorResponse(variable: ServiceVariable, errMsg: string, errorCB: Function, xhrObj?: any, skipNotification?: boolean, skipDefaultNotification?: boolean, ) {
         const methodInfo = this.getMethodInfo(variable, {}, {});
-        const securityDefnObj = _.get(methodInfo, 'securityDefinitions.0');
+        const securityDefnObj = get(methodInfo, 'securityDefinitions.0');
         const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(xhrObj);
         // EVENT: ON_ERROR
         if (!skipNotification) {
             initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, errMsg, advancedOptions, skipDefaultNotification);
         }
-        if (_.get(securityDefnObj, 'type') === VARIABLE_CONSTANTS.REST_SERVICE.SECURITY_DEFN.OAUTH2
-            && _.includes([VARIABLE_CONSTANTS.HTTP_STATUS_CODE.UNAUTHORIZED, VARIABLE_CONSTANTS.HTTP_STATUS_CODE.FORBIDDEN], _.get(xhrObj, 'status'))) {
+        if (get(securityDefnObj, 'type') === VARIABLE_CONSTANTS.REST_SERVICE.SECURITY_DEFN.OAUTH2
+            && includes([VARIABLE_CONSTANTS.HTTP_STATUS_CODE.UNAUTHORIZED, VARIABLE_CONSTANTS.HTTP_STATUS_CODE.FORBIDDEN], get(xhrObj, 'status'))) {
             removeAccessToken(securityDefnObj['x-WM-PROVIDER_ID']);
         }
         /* trigger error callback */
@@ -93,13 +93,13 @@ export class ServiceVariableManager extends BaseVariableManager {
         const isResponsePageable = isPageable(response);
         if (variable.serviceType === 'DataService' || variable.serviceType === 'JavaService') {
             const decodedData = decodeData(response);
-            if (_.isString(response)) {
+            if (isString(response)) {
                 response = decodedData;
             }
         }
         if (isResponsePageable) {
             dataSet = response.content;
-            pagination = _.omit(response, 'content');
+            pagination = omit(response, 'content');
         } else {
             dataSet = response;
         }
@@ -122,7 +122,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         }
 
         // if a primitive type response is returned, wrap it in an object
-        dataSet = (!_.isObject(dataSet)) ? {'value': dataSet} : dataSet;
+        dataSet = (!isObject(dataSet)) ? {'value': dataSet} : dataSet;
 
         // EVENT: ON_PREPARE_SETDATA
         newDataSet = initiateCallback(VARIABLE_CONSTANTS.EVENT.PREPARE_SETDATA, variable, dataSet, advancedOptions);
@@ -138,7 +138,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         const paginationInfo = PaginationUtils.getPaginationInfo(operationInfo, variable);
         if (paginationInfo) {
             const res = PaginationUtils.generatePaginationRes(operationInfo, paginationInfo, response, resHeaders, options, variable);
-            if (!_.isEmpty(res)) {
+            if (!isEmpty(res)) {
                 PaginationUtils.setVariablePagination(variable, res, options);
             }
         }
@@ -261,7 +261,7 @@ export class ServiceVariableManager extends BaseVariableManager {
      * @returns {any}
      */
     private handleAuthError(variable, success, errorCB, options) {
-        const isUserAuthenticated = _.get(securityService.get(), 'authenticated');
+        const isUserAuthenticated = get(securityService.get(), 'authenticated');
         let info;
 
         if (isUserAuthenticated) {
@@ -296,7 +296,7 @@ export class ServiceVariableManager extends BaseVariableManager {
      */
     protected handleRequestMetaError(info, variable, success, errorCB, options) {
         try {
-            const err_type = _.get(info, 'error.type');
+            const err_type = get(info, 'error.type');
 
             switch (err_type) {
                 case VARIABLE_CONSTANTS.REST_SERVICE.ERR_TYPE.NO_ACCESSTOKEN:
@@ -343,12 +343,12 @@ export class ServiceVariableManager extends BaseVariableManager {
         data.wmTransformedData = [];
 
         const columnsArray = variable.transformationColumns,
-            dataArray = _.get(data, variable.dataField) || [],
+            dataArray = get(data, variable.dataField) || [],
             transformedData = data.wmTransformedData;
 
-        _.forEach(dataArray, function (datum, index) {
+        forEach(dataArray, function (datum, index) {
             transformedData[index] = {};
-            _.forEach(columnsArray, function (column, columnIndex) {
+            forEach(columnsArray, function (column, columnIndex) {
                 transformedData[index][column] = datum[columnIndex];
             });
         });
@@ -365,9 +365,9 @@ export class ServiceVariableManager extends BaseVariableManager {
      */
     private getMethodInfo(variable, inputFields, options) {
         let methodInfo;
-        if (!_.isEmpty(metadataService)) {
+        if (!isEmpty(metadataService)) {
             const serviceDef = getClonedObject(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()));
-            methodInfo = serviceDef === null ? null : _.get(serviceDef, 'wmServiceOperationInfo');
+            methodInfo = serviceDef === null ? null : get(serviceDef, 'wmServiceOperationInfo');
         } else  {
             methodInfo = variable.serviceInfo;
         }
@@ -375,7 +375,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         if (!methodInfo) {
             return methodInfo;
         }
-        const securityDefnObj = _.get(methodInfo.securityDefinitions, '0'),
+        const securityDefnObj = get(methodInfo.securityDefinitions, '0'),
             isOAuthTypeService = securityDefnObj && (securityDefnObj.type === VARIABLE_CONSTANTS.REST_SERVICE.SECURITY_DEFN.OAUTH2);
         if (methodInfo.parameters) {
             methodInfo.parameters.forEach(function (param) {
@@ -418,9 +418,9 @@ export class ServiceVariableManager extends BaseVariableManager {
      */
     private isFileUploadInProgress(dataBindings) {
         let filesStatus = false;
-        _.forEach(dataBindings, (dataBinding) => {
-            if (_.isArray(dataBinding) && dataBinding[0] instanceof File) {
-                _.forEach(dataBinding, (file) => {
+        forEach(dataBindings, (dataBinding) => {
+            if (isArray(dataBinding) && dataBinding[0] instanceof File) {
+                forEach(dataBinding, (file) => {
                     if (file.status === 'onProgress') {
                         filesStatus = true;
                         return;
@@ -435,13 +435,13 @@ export class ServiceVariableManager extends BaseVariableManager {
     protected uploadFile(variable, options, success, error, inputFields, requestParams ) {
         let fileParamCount = 0;
         const fileArr: any = [], promArr: any = [];
-        _.forEach(inputFields, (inputField) => {
-            if (_.isArray(inputField)) {
+        forEach(inputFields, (inputField) => {
+            if (isArray(inputField)) {
                 if (inputField[0] instanceof File) {
                     fileParamCount++;
                 }
-                _.forEach(inputField, (input) => {
-                    if (input instanceof File || _.find(_.values(input), o => o instanceof Blob)) {
+                forEach(inputField, (input) => {
+                    if (input instanceof File || find(values(input), o => o instanceof Blob)) {
                         fileArr.push(input);
                         this.totalFilesCount++;
                         fileParamCount = fileParamCount || 1;
@@ -457,7 +457,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         });
         if (fileParamCount === 1) {
             if (inputFields.files.length > 1) {
-                _.forEach(fileArr, (file) => {
+                forEach(fileArr, (file) => {
                     promArr.push(this.uploadFileInFormData(variable, options, success, error, file, requestParams));
                 });
                 return Promise.all(promArr);
@@ -491,7 +491,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             triggerFn(error);
             return;
         }
-        if (_.isObject(output)) {
+        if (isObject(output)) {
             inputFields = output;
         }
 
@@ -500,7 +500,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         // check errors
         if (requestParams.error) {
             const info = this.handleRequestMetaError(requestParams, variable, success, error, options);
-            const reason = (_.get(info, 'error.message') || 'An error occurred while triggering the variable: ') + ': ' +  variable.name;
+            const reason = (get(info, 'error.message') || 'An error occurred while triggering the variable: ') + ': ' +  variable.name;
             triggerFn(error);
             $queue.process(variable);
             return Promise.reject(reason);
@@ -515,7 +515,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         }
 
         // file download
-        if (operationInfo && _.isArray(operationInfo.produces) && _.includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM) && variable.simulateFileDownload) {
+        if (operationInfo && isArray(operationInfo.produces) && includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM) && variable.simulateFileDownload) {
             // ToDo - variable seperation
             return variable.simulateFileDownload(requestParams, variable.dataBinding.file || variable.name, variable.dataBinding.exportType, function () {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
@@ -534,7 +534,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         successHandler = (response, resolve) => {
             if (response && response.type || response && response.status) {
                 const res = response.body || response.data;
-                const data = this.processSuccessResponse(res, variable, _.extend(options, {'xhrObj': response}), success, response.headers);
+                const data = this.processSuccessResponse(res, variable, extend(options, {'xhrObj': response}), success, response.headers);
                 // notify variable success
                 this.notifyInflight(variable, false, data);
                 if (ServiceVariableUtils.isFileDeleteRequest(variable) && variable._deleteFileObservable) {
@@ -623,7 +623,7 @@ export class ServiceVariableManager extends BaseVariableManager {
         requestParams.url = options.url || requestParams.url;
 
         // If request params returns error then show an error toaster
-        if (_.hasIn(requestParams, 'error.message')) {
+        if (hasIn(requestParams, 'error.message')) {
             triggerFn(errorHandler, requestParams.error.message);
             return Promise.reject(requestParams.error.message);
         }
@@ -643,12 +643,12 @@ export class ServiceVariableManager extends BaseVariableManager {
 
     public getInputParms(variable) {
         let wmServiceOperationInfo;
-        if (!_.isEmpty(metadataService)) {
-            wmServiceOperationInfo = _.get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
+        if (!isEmpty(metadataService)) {
+            wmServiceOperationInfo = get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
         } else {
             wmServiceOperationInfo = variable.serviceInfo;
         }
-        return _.get(wmServiceOperationInfo, 'parameters');
+        return get(wmServiceOperationInfo, 'parameters');
     }
 
     public setInput(variable, key, val, options) {
@@ -693,7 +693,7 @@ export class ServiceVariableManager extends BaseVariableManager {
                 'get': function () {
                     const dataSet = variable.dataSet;
                     // For procedure(v1) data doesn't come under content
-                    return _.head(dataSet && dataSet.content) || _.head(dataSet) || {};
+                    return head(dataSet && dataSet.content) || head(dataSet) || {};
                 }
             });
             Object.defineProperty(variable, 'lastRecord', {
@@ -701,7 +701,7 @@ export class ServiceVariableManager extends BaseVariableManager {
                 'get': function () {
                     const dataSet = variable.dataSet;
                     // For procedure(v1) data doesn't come under content
-                    return _.last(dataSet && dataSet.content) || _.last(dataSet) || {};
+                    return last(dataSet && dataSet.content) || last(dataSet) || {};
                 }
             });
         }
@@ -714,13 +714,13 @@ export class ServiceVariableManager extends BaseVariableManager {
         const inputFields = {};
 
         // check if some param value is already available in databinding and update the inputFields accordingly
-        _.map(variable.dataBinding, function (value, key) {
+        map(variable.dataBinding, function (value, key) {
             inputFields[key] = value;
         });
 
         // add the query params mentioned in the searchkey to inputFields
-        _.forEach(filterFields, function (value) {
-            if (_.includes(queryParams, value)) {
+        forEach(filterFields, function (value) {
+            if (includes(queryParams, value)) {
                 inputFields[value] = searchValue;
             }
         });
@@ -737,7 +737,7 @@ export class ServiceVariableManager extends BaseVariableManager {
      * @returns {Promise<any>}
      */
     public searchRecords(variable, options, success, error) {
-        const inputFields = this.getQueryParams(_.split(options.searchKey, ','), options.query, variable);
+        const inputFields = this.getQueryParams(split(options.searchKey, ','), options.query, variable);
 
         const requestParams = {
             page: options.page,

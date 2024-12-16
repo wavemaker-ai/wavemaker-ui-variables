@@ -5,7 +5,7 @@ import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 declare const window: any;
 // @ts-ignore
 import moment from 'moment';
-import _ from 'lodash';
+import {debounce, forEach, isObject, isNumber, isArray, isString, isEmpty, split, map, trim, remove, includes, join, isUndefined, isFunction, filter, keys, get, toUpper, isDate, toLower} from 'lodash-es';
 import he from 'he';
 
 export let appManager: any;
@@ -22,17 +22,17 @@ const timers = new Map();
 const DOT_EXPR_REX = /^\[("|')[\w\W]*(\1)\]$/;
 const _invoke = (variable, op) => {
     let debouncedFn,
-        cancelFn = _.noop,
+        cancelFn = noop,
         retVal;
     if (timers.has(variable)) {
         cancelFn = timers.get(variable).cancel;
     }
     cancelFn();
-    debouncedFn = _.debounce(function () {
+    debouncedFn = debounce(function () {
         retVal = variable[op]();
         // handle promises to avoid uncaught promise errors in console
         if (retVal instanceof Promise) {
-            retVal.catch(_.noop);
+            retVal.catch(noop);
         }
     }, 100);
     timers.set(variable, debouncedFn);
@@ -86,7 +86,7 @@ export const isFileUploadSupported = () => {
  * returns fieldDefs
  */
 export const formatExportExpression = (fieldDefs: any) => {
-    _.forEach(fieldDefs, function (fieldDef: any) {
+    forEach(fieldDefs, function (fieldDef: any) {
         if (fieldDef.expression) {
             fieldDef.expression = '${' + fieldDef.expression + '}';
         }
@@ -132,18 +132,18 @@ export const setInput = (targetObj: any, key: any, val: any, options: any) => {
         paramObj = {};
 
     // content type check
-    if (_.isObject(options)) {
+    if (isObject(options)) {
         switch (options.type) {
             case 'file':
                 val = getBlob(val, options.contentType);
                 break;
             case 'number':
-                val = _.isNumber(val) ? val : parseInt(val, 10);
+                val = isNumber(val) ? val : parseInt(val, 10);
                 break;
         }
     }
 
-    if (_.isObject(key)) {
+    if (isObject(key)) {
         // check if the passed parameter is an object itself
         paramObj = key;
     } else if (key.indexOf('.') > -1) {
@@ -158,7 +158,7 @@ export const setInput = (targetObj: any, key: any, val: any, options: any) => {
         paramObj[key] = val;
     }
 
-    _.forEach(paramObj, function (paramVal: any, paramKey: any) {
+    forEach(paramObj, function (paramVal: any, paramKey: any) {
         targetObj[paramKey] = paramVal;
     });
     return targetObj;
@@ -174,29 +174,29 @@ export const decodeData = (responseContent: any) => {
     if (!responseContent) {
         return responseContent;
     }
-    if (_.isArray(responseContent)) {
-        _.forEach(responseContent, (data: any) => {
-            if (_.isString(data)) {
+    if (isArray(responseContent)) {
+        forEach(responseContent, (data: any) => {
+            if (isString(data)) {
                 data = htmlDecode(data);
-            } else if (_.isObject(data)) {
-                _.forEach(data, (value: any, key: any) => {
-                    if (value && _.isString(value)) {
+            } else if (isObject(data)) {
+                forEach(data, (value: any, key: any) => {
+                    if (value && isString(value)) {
                         data[key] = htmlDecode(value);
-                    } else if (_.isObject(value)) {
+                    } else if (isObject(value)) {
                         decodeData(value);
                     }
                 });
             }
         });
-    } else if (_.isObject(responseContent)) {
-        _.forEach(responseContent, (value: any, key: any) => {
-            if (value && _.isString(value)) {
+    } else if (isObject(responseContent)) {
+        forEach(responseContent, (value: any, key: any) => {
+            if (value && isString(value)) {
                 responseContent[key] = htmlDecode(value);
-            } else if (_.isObject(value)) {
+            } else if (isObject(value)) {
                 decodeData(value);
             }
         });
-    } else if (_.isString(responseContent)) {
+    } else if (isString(responseContent)) {
         responseContent = htmlDecode(responseContent);
         return responseContent;
     }
@@ -216,7 +216,7 @@ export const getEvaluatedOrderBy = (varOrder: any, optionsOrder: any) => {
     let optionFields: any,
         varOrderBy;
     // If options order by is not defined, return variable order
-    if (!optionsOrder || _.isEmpty(optionsOrder)) {
+    if (!optionsOrder || isEmpty(optionsOrder)) {
         return varOrder;
     }
     // If variable order by is not defined, return options order
@@ -224,17 +224,17 @@ export const getEvaluatedOrderBy = (varOrder: any, optionsOrder: any) => {
         return optionsOrder;
     }
     // If both are present, combine the options order and variable order, with options order as precedence
-    varOrder     = _.split(varOrder, ',');
-    optionsOrder = _.split(optionsOrder, ',');
-    optionFields = _.map(optionsOrder, function (order: any) {
-        return _.split(_.trim(order), ' ')[0];
+    varOrder     = split(varOrder, ',');
+    optionsOrder = split(optionsOrder, ',');
+    optionFields = map(optionsOrder, function (order: any) {
+        return split(trim(order), ' ')[0];
     });
     // If a field is present in both options and variable, remove the variable orderby
-    _.remove(varOrder, function (orderBy: any) {
-        return _.includes(optionFields, _.split(_.trim(orderBy), ' ')[0]);
+    remove(varOrder, function (orderBy: any) {
+        return includes(optionFields, split(trim(orderBy), ' ')[0]);
     });
-    varOrderBy = varOrder.length ? ',' + _.join(varOrder, ',') : '';
-    return _.join(optionsOrder, ',') + varOrderBy;
+    varOrderBy = varOrder.length ? ',' + join(varOrder, ',') : '';
+    return join(optionsOrder, ',') + varOrderBy;
 };
 
 const processVariablePostBindUpdate = (nodeName, nodeVal, nodeType, variable, noUpdate?) => {
@@ -242,7 +242,7 @@ const processVariablePostBindUpdate = (nodeName, nodeVal, nodeType, variable, no
         case VARIABLE_CONSTANTS.CATEGORY.LIVE:
             if (variable.operation === 'read') {
                 if (nodeName === 'dataBinding') {
-                    _.forEach(nodeVal, function (val, key) {
+                    forEach(nodeVal, function (val, key) {
                         variable.filterFields[key] = {
                             'value': val
                         };
@@ -254,7 +254,7 @@ const processVariablePostBindUpdate = (nodeName, nodeVal, nodeType, variable, no
                     };
                 }
                 /* if auto-update set for the variable with read operation only, get its data */
-                if (variable.autoUpdate && !_.isUndefined(nodeVal) && _.isFunction(variable.listRecords) && !noUpdate) {
+                if (variable.autoUpdate && !isUndefined(nodeVal) && isFunction(variable.listRecords) && !noUpdate) {
                     _invoke(variable, 'listRecords');
                 }
             } else {
@@ -264,25 +264,25 @@ const processVariablePostBindUpdate = (nodeName, nodeVal, nodeType, variable, no
                     variable.inputFields[nodeName] = nodeVal;
                 }
                 /* if auto-update set for the variable with read operation only, get its data */
-                if (variable.autoUpdate && !_.isUndefined(nodeVal) && _.isFunction(variable[variable.operation + 'Record']) && !noUpdate) {
+                if (variable.autoUpdate && !isUndefined(nodeVal) && isFunction(variable[variable.operation + 'Record']) && !noUpdate) {
                     _invoke(variable, variable.operation + 'Record');
                 }
             }
             break;
         case VARIABLE_CONSTANTS.CATEGORY.CRUD:
-            if (variable.operationType === 'list' && variable.autoUpdate && !_.isUndefined(nodeVal) && _.isFunction(variable.invoke) && !noUpdate) {
+            if (variable.operationType === 'list' && variable.autoUpdate && !isUndefined(nodeVal) && isFunction(variable.invoke) && !noUpdate) {
                 _invoke(variable, 'invoke');
             }
             break;
         case VARIABLE_CONSTANTS.CATEGORY.SERVICE:
         case VARIABLE_CONSTANTS.CATEGORY.LOGIN:
-            if (variable.autoUpdate && !_.isUndefined(nodeVal) && _.isFunction(variable.invoke) && !noUpdate) {
+            if (variable.autoUpdate && !isUndefined(nodeVal) && isFunction(variable.invoke) && !noUpdate) {
                 _invoke(variable, 'invoke');
             }
             break;
         case VARIABLE_CONSTANTS.CATEGORY.DEVICE:
             variable[nodeName] = nodeVal;
-            if (variable.autoUpdate && !_.isUndefined(nodeVal) && _.isFunction(variable.invoke) && !noUpdate) {
+            if (variable.autoUpdate && !isUndefined(nodeVal) && isFunction(variable.invoke) && !noUpdate) {
                 _invoke(variable, 'invoke');
             }
             break;
@@ -360,7 +360,7 @@ export const getTargetNodeKey = (target) => {
 export const setValueToNode = (target, obj, root, variable, value, noUpdate?) => {
     const targetNodeKey = getTargetNodeKey(target),
         targetObj = getTargetObj(obj, root, variable);
-    value = !_.isUndefined(value) ? value : obj.value;
+    value = !isUndefined(value) ? value : obj.value;
     /* sanity check, user can bind parent nodes to non-object values, so child node bindings may fail */
     if (targetObj) {
         targetObj[targetNodeKey] = value;
@@ -420,19 +420,19 @@ export const getTarget = (variable) => {
  * @param variable
  */
 export const updateInternalNodes = (target, root, variable) => {
-    const boundInternalNodes = _.keys(_.get(internalBoundNodeMap.get(variable), [variable.name, root])),
+    const boundInternalNodes = keys(get(internalBoundNodeMap.get(variable), [variable.name, root])),
         targetNodeKey = getTargetNodeKey(target);
     let internalNodes;
     function findInternalNodeBound() {
-        return _.filter(boundInternalNodes, function (node) {
+        return filter(boundInternalNodes, function (node) {
             // the later condition in check (targetNodeKey === root || targetNodeKey === 'dataBinding') is specifically for live variable of insert/update types
-            return (node !== targetNodeKey && _.includes(node, targetNodeKey)) || ((targetNodeKey === root || targetNodeKey === 'dataBinding') && node !== targetNodeKey);
+            return (node !== targetNodeKey && includes(node, targetNodeKey)) || ((targetNodeKey === root || targetNodeKey === 'dataBinding') && node !== targetNodeKey);
         });
     }
     internalNodes = findInternalNodeBound();
     if ((internalNodes.length)) {
-        _.forEach(internalNodes, function (node) {
-            setValueToNode(node, {target: node}, root, variable, _.get(internalBoundNodeMap.get(variable), [variable.name, root, node]));
+        forEach(internalNodes, function (node) {
+            setValueToNode(node, {target: node}, root, variable, get(internalBoundNodeMap.get(variable), [variable.name, root, node]));
         });
     }
 };
@@ -457,7 +457,7 @@ export const initiateCallback = (type: string, variable: any, data: any, options
             errorVariable = callBackScope.Actions[VARIABLE_CONSTANTS.DEFAULT_VAR.NOTIFICATION];
             if (errorVariable) {
                 data = errorVariable.getMessage() || data;
-                data = _.isString(data) ? data : 'An error has occured. Please check the app logs.';
+                data = isString(data) ? data : 'An error has occured. Please check the app logs.';
                 errorVariable.invoke({ 'message' : data}, undefined, undefined);
                 // $rootScope.$evalAsync(function () {
                 // $rootScope.$emit("invoke-service", VARIABLE_CONSTANTS.DEFAULT_VAR.NOTIFICATION, {scope: callBackScope, message: response});
@@ -480,13 +480,13 @@ export const initiateCallback = (type: string, variable: any, data: any, options
     }
 };
 const getDateTimeFormatForType = (type) => {
-    return DEFAULT_FORMATS[_.toUpper(type)];
+    return DEFAULT_FORMATS[toUpper(type)];
 };
 
 // Format value for datetime types
 const _formatDate = (dateValue, type, dateFormatter) => {
     let epoch;
-    if (_.isDate(dateValue)) {
+    if (isDate(dateValue)) {
         epoch = dateValue.getTime();
     } else {
         if (!isNaN(dateValue)) {
@@ -508,11 +508,11 @@ const _formatDate = (dateValue, type, dateFormatter) => {
 
 // Function to convert values of date time types into default formats
 export const formatDate = (value, type, dateFormatter) => {
-    if (_.includes(type, '.')) {
-        type = _.toLower(extractType(type));
+    if (includes(type, '.')) {
+        type = toLower(extractType(type));
     }
-    if (_.isArray(value)) {
-        return _.map(value, function (val) {
+    if (isArray(value)) {
+        return map(value, function (val) {
             return _formatDate(val, type, dateFormatter);
         });
     }

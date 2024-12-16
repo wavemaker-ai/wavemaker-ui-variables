@@ -3,7 +3,7 @@ import DatasetUtil from '../util/dataset-util';
 import {getTarget, getTargetNodeKey, getTargetObj, setValueToNode} from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
 
-import _ from 'lodash';
+import {isUndefined, includes} from 'lodash-es';
 export abstract class BaseAction {
 
     protected _id: string;
@@ -37,11 +37,11 @@ export abstract class BaseAction {
             root = getTarget(this),
             targetObj = getTargetObj(obj, root, this),
             targetNodeKey = getTargetNodeKey(target);
-        if ((newVal === oldVal && _.isUndefined(newVal)) || (_.isUndefined(newVal) && (!_.isUndefined(oldVal) || !_.isUndefined(targetObj[targetNodeKey])))) {
+        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))) {
             return;
         }
         // Skip cloning for blob column
-        if (!_.includes(['blob', 'file'], obj.type)) {
+        if (!includes(['blob', 'file'], obj.type)) {
             newVal = getClonedObject(newVal);
         }
         setValueToNode(target, obj, root, this, newVal); // cloning newVal to keep the source clean

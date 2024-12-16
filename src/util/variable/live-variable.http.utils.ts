@@ -3,7 +3,7 @@ import { getClonedObject, removeExtraSlashes } from '../utils';
 import { VARIABLE_URLS } from '../../constants/variables.constants';
 import { httpService } from './variables.utils';
 
-import _ from 'lodash';
+import {isUndefined} from 'lodash-es';
 
 const isStudioMode = false;
 
@@ -33,7 +33,7 @@ export const parseConfig = (serviceParams: any): any => {
             for (param in urlParams) {
                 if (urlParams.hasOwnProperty(param)) {
                     val = urlParams[param];
-                    if (!_.isUndefined(val) && val !== null) {
+                    if (!isUndefined(val) && val !== null) {
                         config.url = config.url.replace(new RegExp(':' + param, 'g'), val);
                     }
                 }
@@ -45,7 +45,7 @@ export const parseConfig = (serviceParams: any): any => {
             config.params = serviceParams.params;
         }
         /* check for data */
-        if (!_.isUndefined(serviceParams.data)) {
+        if (!isUndefined(serviceParams.data)) {
             config.data = serviceParams.data;
         }
         /* check for data parameters, written to support old service calls (.json calls) */
@@ -78,7 +78,7 @@ export const generateConnectionParams = (params, action) => {
 
     urlParams = {
         projectID        : params.projectID,
-        service          : !_.isUndefined(params.service) ? params.service : 'services',
+        service          : !isUndefined(params.service) ? params.service : 'services',
         dataModelName    : params.dataModelName,
         entityName       : params.entityName,
         queryName        : params.queryName,
@@ -126,7 +126,7 @@ const initiateAction = (action, params, successCallback?, failureCallback?, nopr
 
     urlParams = {
         projectID        : params.projectID,
-        service          : !_.isUndefined(params.service) ? params.service : 'services',
+        service          : !isUndefined(params.service) ? params.service : 'services',
         dataModelName    : params.dataModelName,
         entityName       : params.entityName,
         queryName        : params.queryName,
@@ -148,7 +148,7 @@ const initiateAction = (action, params, successCallback?, failureCallback?, nopr
             for (param in urlParams) {
                 if (urlParams.hasOwnProperty(param)) {
                     val = urlParams[param];
-                    if (!_.isUndefined(val) && val !== null) {
+                    if (!isUndefined(val) && val !== null) {
                         config.url = config.url.replace(new RegExp(':' + param, 'g'), val);
                     }
                 }

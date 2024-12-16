@@ -4,7 +4,7 @@ import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
 // @ts-ignore
 import moment from 'moment';
-import _ from 'lodash';
+import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone} from 'lodash-es';
 
 export class LiveVariableUtils {
 
@@ -20,7 +20,7 @@ export class LiveVariableUtils {
     static getCompositeIDURL(primaryKeysData) {
         let compositeId = '';
         //  Loop over the 'compositeKeysData' and construct the 'compositeId'.
-        _.forEach(primaryKeysData, (paramValue, paramName) => {
+        forEach(primaryKeysData, (paramValue, paramName) => {
             compositeId += paramName + '=' + encodeURIComponent(paramValue) + '&';
         });
         compositeId = compositeId.slice(0, -1);
@@ -30,7 +30,7 @@ export class LiveVariableUtils {
 
     // Check if table has blob column
     static hasBlob(variable) {
-        return _.find(_.get(variable, ['propertiesMap', 'columns']), {'type': 'blob'});
+        return find(get(variable, ['propertiesMap', 'columns']), {'type': 'blob'});
     }
 
     static getPrimaryKey(variable) {
@@ -44,11 +44,11 @@ export class LiveVariableUtils {
         /*Old projects do not have primary fields. Get primary key from the columns*/
         const primaryKey = [];
         /*Loop through the propertiesMap and get the primary key column.*/
-        _.forEach(variable.propertiesMap.columns, (index, column) => {
+        forEach(variable.propertiesMap.columns, (index, column) => {
             if (column.isPrimaryKey) {
-                if (column.isRelated && (!_.includes(column.relatedFieldName, primaryKey))) {
+                if (column.isRelated && (!includes(column.relatedFieldName, primaryKey))) {
                     primaryKey.push(column.relatedFieldName);
-                } else if (!_.includes(column.fieldName, primaryKey)) {
+                } else if (!includes(column.fieldName, primaryKey)) {
                     primaryKey.push(column.fieldName);
                 }
             }
@@ -61,25 +61,25 @@ export class LiveVariableUtils {
         if (!responseData) {
             return;
         }
-        const blobCols = _.map(_.filter(variable.propertiesMap.columns, {'type': 'blob'}), 'fieldName'),
-            deployedUrl = _.trim($rootScope.project.deployedUrl);
+        const blobCols = map(filter(variable.propertiesMap.columns, {'type': 'blob'}), 'fieldName'),
+            deployedUrl = trim($rootScope.project.deployedUrl);
         let href = '',
             primaryKeys;
 
-        if (_.isEmpty(blobCols)) {
+        if (isEmpty(blobCols)) {
             return;
         }
 
         if (hasCordova()) {
-            href += _.endsWith(deployedUrl, '/') ? deployedUrl : deployedUrl + '/';
+            href += endsWith(deployedUrl, '/') ? deployedUrl : deployedUrl + '/';
         }
         href += ((variable._prefabName !== '' && variable._prefabName !== undefined) ? 'prefabs/' + variable._prefabName : 'services') + '/' + variable.liveSource + '/' + variable.type + '/';
         primaryKeys = variable.propertiesMap.primaryFields || variable.propertiesMap.primaryKeys;
-        _.forEach(responseData, data => {
+        forEach(responseData, data => {
             if (data) {
-                _.forEach(blobCols, col => {
+                forEach(blobCols, col => {
                     const compositeKeysData = {};
-                    if (data[col] === null || !_.isEmpty(_.trim(data[col]))) {
+                    if (data[col] === null || !isEmpty(trim(data[col]))) {
                         return;
                     }
                     if (LiveVariableUtils.isCompositeKey(primaryKeys)) {
@@ -88,7 +88,7 @@ export class LiveVariableUtils {
                         });
                         data[col] = href + 'composite-id/content/' + col + '?' + LiveVariableUtils.getCompositeIDURL(compositeKeysData);
                     } else {
-                        data[col] = href + data[_.join(primaryKeys)] + '/content/' + col;
+                        data[col] = href + data[join(primaryKeys)] + '/content/' + col;
                     }
                 });
             }
@@ -101,26 +101,26 @@ export class LiveVariableUtils {
             relatedCols,
             relatedCol,
             columnParts;
-        if (_.includes(fieldName, '.')) {
+        if (includes(fieldName, '.')) {
             columnParts = fieldName.split('.');
             if (columnParts.length > 2) {
                 return undefined;
             }
-            column = _.find(columns, col => {
+            column = find(columns, col => {
                 return col.fieldName === columnParts[0];
             });
             relatedCols = column && column.columns;
-            relatedCol = _.find(relatedCols, col => {
+            relatedCol = find(relatedCols, col => {
                 return col.fieldName === columnParts[1];
             });
             return relatedCol && relatedCol[type];
         }
-        column = _.find(columns, col => {
+        column = find(columns, col => {
             return col.fieldName === fieldName || col.relatedColumnName === fieldName;
         });
         if (!column && entityName) {
-            const entity = _.find(columns, col => col.relatedEntityName === entityName);
-            column = _.find(entity.columns, col => {
+            const entity = find(columns, col => col.relatedEntityName === entityName);
+            column = find(entity.columns, col => {
                 return col.fieldName === fieldName || col.relatedColumnName === fieldName;
             });
         }
@@ -151,11 +151,11 @@ export class LiveVariableUtils {
     }
 
     static isStringType(type) {
-        return _.includes(['text', 'string'], _.toLower(type));
+        return includes(['text', 'string'], toLower(type));
     }
 
     static getSQLFieldType(variable, options) {
-        if (_.includes(['timestamp', 'datetime', 'date'], options.type)) {
+        if (includes(['timestamp', 'datetime', 'date'], options.type)) {
             return options.type;
         }
         return LiveVariableUtils.getSqlType(variable, options.fieldName) || options.type;
@@ -172,7 +172,7 @@ export class LiveVariableUtils {
     }
 
     static getFilterCondition(filterCondition) {
-        if (_.includes(DB_CONSTANTS.DATABASE_RANGE_MATCH_MODES, filterCondition)) {
+        if (includes(DB_CONSTANTS.DATABASE_RANGE_MATCH_MODES, filterCondition)) {
             return filterCondition;
         }
         return DB_CONSTANTS.DATABASE_MATCH_MODES['exact'];
@@ -193,17 +193,17 @@ export class LiveVariableUtils {
 
         fieldOptions.type = fieldType;
         /* if the field value is an object(complex type), loop over each field inside and push only first level fields */
-        if (_.isObject(fieldValue) && !_.isArray(fieldValue)) {
+        if (isObject(fieldValue) && !isArray(fieldValue)) {
             const firstLevelValues = [];
-            _.forEach(fieldValue, (subFieldValue, subFieldName) => {
-                if (subFieldValue && !_.isObject(subFieldValue)) {
+            forEach(fieldValue, (subFieldValue, subFieldName) => {
+                if (subFieldValue && !isObject(subFieldValue)) {
                     firstLevelValues.push(fieldName + '.' + subFieldName + '=' + subFieldValue);
                 }
             });
             return firstLevelValues;
         }
 
-        if (_.includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition)) {
+        if (includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition)) {
             attributeName = LiveVariableUtils.getAttributeName(variable, fieldName);
             // For non string types empty match modes are not supported, so convert them to null match modes.
             if (fieldType && !LiveVariableUtils.isStringType(fieldType)) {
@@ -212,7 +212,7 @@ export class LiveVariableUtils {
             filterOption = {
                 'attributeName': attributeName,
                 'attributeValue': '',
-                'attributeType': _.toUpper(fieldType),
+                'attributeType': toUpper(fieldType),
                 'filterCondition': filterCondition,
                 'required': fieldRequired
             };
@@ -227,9 +227,9 @@ export class LiveVariableUtils {
             if (fieldType) {
                 switch (fieldType) {
                     case 'integer':
-                        fieldValue = _.isArray(fieldValue) ? _.reduce(fieldValue, (result, value) => {
+                        fieldValue = isArray(fieldValue) ? reduce(fieldValue, (result, value) => {
                             value = parseInt(value, 10);
-                            if (!_.isNaN(value)) {
+                            if (!isNaN(value)) {
                                 result.push(value);
                             }
                             return result;
@@ -244,8 +244,8 @@ export class LiveVariableUtils {
                         break;
                     case 'text':
                     case 'string':
-                        if (_.isArray(fieldValue)) {
-                            filterCondition = _.includes([matchModes['in'], matchModes['notin']], filterCondition) ? filterCondition : matchModes['exact'];
+                        if (isArray(fieldValue)) {
+                            filterCondition = includes([matchModes['in'], matchModes['notin']], filterCondition) ? filterCondition : matchModes['exact'];
                         } else {
                             filterCondition = filterCondition || matchModes['anywhereignorecase'];
                         }
@@ -255,13 +255,13 @@ export class LiveVariableUtils {
                         break;
                 }
             } else {
-                filterCondition = _.isString(fieldValue) ? matchModes['anywhereignorecase'] : matchModes['exact'];
+                filterCondition = isString(fieldValue) ? matchModes['anywhereignorecase'] : matchModes['exact'];
             }
             attributeName = LiveVariableUtils.getAttributeName(variable, fieldName);
             filterOption = {
                 'attributeName': attributeName,
                 'attributeValue': fieldValue,
-                'attributeType': _.toUpper(fieldType),
+                'attributeType': toUpper(fieldType),
                 'filterCondition': filterCondition,
                 'required': fieldRequired
             };
@@ -274,10 +274,10 @@ export class LiveVariableUtils {
 
     static getFilterOptions(variable, filterFields, options) {
         let filterOptions = [];
-        _.each(filterFields, (fieldOptions) => {
+        each(filterFields, (fieldOptions) => {
             const filterOption = LiveVariableUtils.getFilterOption(variable, fieldOptions, options);
-            if (!_.isNil(filterOption)) {
-                if (_.isArray(filterOption)) {
+            if (!isNil(filterOption)) {
+                if (isArray(filterOption)) {
                     filterOptions = filterOptions.concat(filterOption);
                 } else {
                     filterOptions.push(filterOption);
@@ -290,9 +290,9 @@ export class LiveVariableUtils {
     // Wrap the field name and value in lower() in ignore case scenario
     // TODO: Change the function name to represent the added functionality of identifiers for datetime, timestamp and float types. Previously only lower was warapped.
     static wrapInLowerCase(value, options, ignoreCase, isField?) {
-        const type = _.toLower(options.attributeType);
+        const type = toLower(options.attributeType);
         // If ignore case is true and type is string/ text and match mode is string type, wrap in lower()
-        if (ignoreCase && (!type || LiveVariableUtils.isStringType(type)) && _.includes(DB_CONSTANTS.DATABASE_STRING_MODES, options.filterCondition)) {
+        if (ignoreCase && (!type || LiveVariableUtils.isStringType(type)) && includes(DB_CONSTANTS.DATABASE_STRING_MODES, options.filterCondition)) {
             return 'lower(' + value + ')';
         }
         return value;
@@ -300,8 +300,9 @@ export class LiveVariableUtils {
 
     static encodeAndAddQuotes(value, type, skipEncode) {
         let encodedValue = skipEncode ? value : encodeURIComponent(value);
-        type = _.toLower(type);
-        encodedValue = _.replace(encodedValue, /'/g, '\'\'');
+        type = toLower(type);
+        //@ts-ignore
+        encodedValue = replace(encodedValue, /'/g, '\'\'');
         // For number types, don't wrap the value in quotes
         if ((isNumberType(type) && type !== 'float')) {
             return encodedValue;
@@ -314,7 +315,7 @@ export class LiveVariableUtils {
         const filterCondition = options.filterCondition,
             dbModes = DB_CONSTANTS.DATABASE_MATCH_MODES,
             type = options.attributeType;
-        if (_.includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition)) {
+        if (includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition)) {
             // For empty matchmodes, no value is required
             return '';
         }
@@ -337,13 +338,13 @@ export class LiveVariableUtils {
                 param = LiveVariableUtils.wrapInLowerCase(param, options, ignoreCase);
                 break;
             case dbModes.between:
-                param = _.join(_.map(value, val => {
+                param = join(map(value, val => {
                     return LiveVariableUtils.wrapInLowerCase(LiveVariableUtils.encodeAndAddQuotes(val, type, skipEncode), options, ignoreCase);
                 }), ' and ');
                 break;
             case dbModes.in:
             case dbModes.notin:
-                param = _.join(_.map(value, val => {
+                param = join(map(value, val => {
                     return LiveVariableUtils.wrapInLowerCase(LiveVariableUtils.encodeAndAddQuotes(val, type, skipEncode), options, ignoreCase);
                 }), ', ');
                 param = '(' + param + ')';
@@ -363,17 +364,17 @@ export class LiveVariableUtils {
     static getSearchQuery(filterOptions, operator, ignoreCase, skipEncode?) {
         let query;
         const params = [];
-        _.forEach(filterOptions, fieldValue => {
+        forEach(filterOptions, fieldValue => {
             const value = fieldValue.attributeValue,
                 dbModes = DB_CONSTANTS.DATABASE_MATCH_MODES,
-                isValArray = _.isArray(value);
+                isValArray = isArray(value);
             let fieldName = fieldValue.attributeName,
                 filterCondition = fieldValue.filterCondition,
                 matchModeExpr,
                 paramValue;
             // If value is an empty array, do not generate the query
             // If values is NaN and number type, do not generate query for this field
-            if ((isValArray && _.isEmpty(value)) || (!isValArray && isNaN(value) && (isNumberType(fieldValue.attributeType))) || (!isValArray && (isNaN(value) && !moment(value).isValid() && isDateTimeType(_.toLower(fieldValue.attributeType))))) {
+            if ((isValArray && isEmpty(value)) || (!isValArray && isNaN(value) && (isNumberType(fieldValue.attributeType))) || (!isValArray && (isNaN(value) && !moment(value).isValid() && isDateTimeType(toLower(fieldValue.attributeType))))) {
                 return;
             }
             if (isValArray) {
@@ -386,7 +387,7 @@ export class LiveVariableUtils {
             fieldName = LiveVariableUtils.wrapInLowerCase(fieldName, fieldValue, ignoreCase);
             params.push(replace(matchModeExpr, [fieldName, paramValue]));
         });
-        query = _.join(params, operator); // empty space added intentionally around OR
+        query = join(params, operator); // empty space added intentionally around OR
         return query;
     }
 
@@ -397,20 +398,20 @@ export class LiveVariableUtils {
      * @param options options
      */
     static processFilterFields(rules, variable, options) {
-        _.remove(rules, rule => {
-            return rule && (_.isString(rule.value) && rule.value.indexOf('bind:') === 0 || (rule.matchMode === 'between' ? (_.isString(rule.secondvalue) && rule.secondvalue.indexOf('bind:') === 0) : false));
+        remove(rules, rule => {
+            return rule && (isString(rule.value) && rule.value.indexOf('bind:') === 0 || (rule.matchMode === 'between' ? (isString(rule.secondvalue) && rule.secondvalue.indexOf('bind:') === 0) : false));
         });
 
-        _.forEach(rules, (rule, index) => {
+        forEach(rules, (rule, index) => {
             if (rule) {
                 if (rule.rules) {
                     LiveVariableUtils.processFilterFields(rule.rules, variable, options);
                 } else {
-                    if (!_.isNull(rule.target)) {
+                    if (!isNull(rule.target)) {
                         const value = rule.matchMode.toLowerCase() === DB_CONSTANTS.DATABASE_MATCH_MODES.between.toLowerCase()
-                            ? (_.isArray(rule.value) ? rule.value : [rule.value, rule.secondvalue])
+                            ? (isArray(rule.value) ? rule.value : [rule.value, rule.secondvalue])
                             : (rule.matchMode.toLowerCase() === DB_CONSTANTS.DATABASE_MATCH_MODES.in.toLowerCase() || rule.matchMode.toLowerCase() === DB_CONSTANTS.DATABASE_MATCH_MODES.notin.toLowerCase()
-                                ? (_.isArray(rule.value) ? rule.value : (rule.value ? rule.value.split(',').map(val => val.trim()) : ''))
+                                ? (isArray(rule.value) ? rule.value : (rule.value ? rule.value.split(',').map(val => val.trim()) : ''))
                                 : rule.value);
                         rules[index] = LiveVariableUtils.getFilterOption(variable, {
                             'fieldName': rule.target,
@@ -432,15 +433,15 @@ export class LiveVariableUtils {
         let filterCondition = fieldValue.filterCondition;
 
         const value = fieldValue.attributeValue;
-        const isValArray = _.isArray(value);
+        const isValArray = isArray(value);
         const dbModes = DB_CONSTANTS.DATABASE_MATCH_MODES;
 
         // If value is an empty array, do not generate the query
         // If values is NaN and number type, do not generate query for this field
-        if ((isValArray && _.isEmpty(value)) ||
-            (isValArray && _.some(value, val => (_.isNull(val) || _.isNaN(val) || val === ''))) ||
+        if ((isValArray && isEmpty(value)) ||
+            (isValArray && some(value, val => (isNull(val) || isNaN(val) || val === ''))) ||
             (!isValArray && (isNaN(value) && (isNumberType(fieldValue.attributeType)))) ||
-            (!isValArray && (isNaN(value) && !moment(value).isValid() && isDateTimeType(_.toLower(fieldValue.attributeType))))) {
+            (!isValArray && (isNaN(value) && !moment(value).isValid() && isDateTimeType(toLower(fieldValue.attributeType))))) {
             return;
         }
         if (isValArray) {
@@ -466,10 +467,10 @@ export class LiveVariableUtils {
      */
     static getIgnoreCase(matchMode, ignoreCase) {
         const matchModes = DB_CONSTANTS.DATABASE_MATCH_MODES;
-        if (_.indexOf([matchModes['anywhere'], matchModes['nowhere'], matchModes['start'], matchModes['end'], matchModes['exact']], matchMode) !== -1) {
+        if (indexOf([matchModes['anywhere'], matchModes['nowhere'], matchModes['start'], matchModes['end'], matchModes['exact']], matchMode) !== -1) {
             return false;
         }
-        if (_.indexOf([matchModes['anywhereignorecase'], matchModes['nowhereignorecase'], matchModes['startignorecase'], matchModes['endignorecase'], matchModes['exactignorecase']], matchMode) !== -1) {
+        if (indexOf([matchModes['anywhereignorecase'], matchModes['nowhereignorecase'], matchModes['startignorecase'], matchModes['endignorecase'], matchModes['exactignorecase']], matchMode) !== -1) {
             return true;
         }
         return ignoreCase;
@@ -477,7 +478,7 @@ export class LiveVariableUtils {
 
     static generateSearchQuery(rules, condition, ignoreCase, skipEncode) {
         const params = [];
-        _.forEach(rules, rule => {
+        forEach(rules, rule => {
             if (rule) {
                 if (rule.rules) {
                     const query = LiveVariableUtils.generateSearchQuery(rule.rules, rule.condition, ignoreCase, skipEncode);
@@ -486,13 +487,13 @@ export class LiveVariableUtils {
                     }
                 } else {
                     const searchField = LiveVariableUtils.getSearchField(rule, LiveVariableUtils.getIgnoreCase(rule.filterCondition, ignoreCase), skipEncode);
-                    if (!_.isNil(searchField)) {
+                    if (!isNil(searchField)) {
                         params.push(searchField);
                     }
                 }
             }
         });
-        return _.join(params, ' ' + condition + ' ');
+        return join(params, ' ' + condition + ' ');
     }
 
     static prepareTableOptionsForFilterExps(variable, options, clonedFields) {
@@ -508,25 +509,25 @@ export class LiveVariableUtils {
         let clonedObj = clonedFields || getClonedObject(variable.filterExpressions);
 
         // if filterexpression from live filter is present use it to query
-        if (options.filterExpr && !_.isEmpty(options.filterExpr)) {
+        if (options.filterExpr && !isEmpty(options.filterExpr)) {
             clonedObj = options.filterExpr;
         }
         // merge live filter runtime values
         let filterRules: any = {};
-        if (!_.isEmpty(options.filterFields)) {
+        if (!isEmpty(options.filterFields)) {
             let operator = '';
             for (const field in options.filterFields) {
                 operator = options.filterFields[field] && options.filterFields[field]['logicalOp'] || '';
                 break;
             }
             filterRules = {'condition': options.logicalOp || operator || 'AND', 'rules': []};
-            _.forEach(options.filterFields, (filterObj, filterName) => {
+            forEach(options.filterFields, (filterObj, filterName) => {
                 if (!filterObj) {
                     return
                 }
                 const filterCondition = matchModes[filterObj.matchMode] || matchModes[filterObj.filterCondition] || filterObj.filterCondition;
-                if (_.includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition) ||
-                    (!_.isNil(filterObj.value) && filterObj.value !== '')) {
+                if (includes(DB_CONSTANTS.DATABASE_EMPTY_MATCH_MODES, filterCondition) ||
+                    (!isNil(filterObj.value) && filterObj.value !== '')) {
                     const type = filterObj.type || LiveVariableUtils.getSqlType(variable, filterName, options.entityName);
                     const ruleObj = {
                         'target': filterName,
@@ -539,8 +540,8 @@ export class LiveVariableUtils {
                 }
             });
         }
-        if (!_.isEmpty(clonedObj)) {
-            if (!_.isNil(filterRules.rules) && filterRules.rules.length) {
+        if (!isEmpty(clonedObj)) {
+            if (!isNil(filterRules.rules) && filterRules.rules.length) {
                 // combine both the rules using 'AND'
                 const tempRules = {'condition': 'AND', 'rules': []};
                 tempRules.rules.push(getClonedObject(clonedObj));
@@ -579,8 +580,8 @@ export class LiveVariableUtils {
             optionsQuery;
         clonedFields = clonedFields || variable.filterFields;
         // get the filter fields from the variable
-        _.forEach(clonedFields, (value, key) => {
-            if (_.isObject(value) && (!options.filterFields || !options.filterFields[key] || options.filterFields[key].logicalOp === 'AND')) {
+        forEach(clonedFields, (value, key) => {
+            if (isObject(value) && (!options.filterFields || !options.filterFields[key] || options.filterFields[key].logicalOp === 'AND')) {
                 value.fieldName = key;
                 if (LiveVariableUtils.isStringType(LiveVariableUtils.getSQLFieldType(variable, value))) {
                     value.filterCondition = DB_CONSTANTS.DATABASE_MATCH_MODES[value.matchMode || variable.matchMode];
@@ -590,7 +591,7 @@ export class LiveVariableUtils {
             }
         });
         // get the filter fields from the options
-        _.forEach(options.filterFields, (value, key) => {
+        forEach(options.filterFields, (value, key) => {
             value.fieldName = key;
             value.filterCondition = DB_CONSTANTS.DATABASE_MATCH_MODES[value.matchMode || options.matchMode || variable.matchMode];
             filterFields.push(value);
@@ -603,9 +604,9 @@ export class LiveVariableUtils {
          */
         if (options.searchWithQuery && filterOptions.length) {
             // Generate query for variable filter fields. This has AND logical operator
-            query = LiveVariableUtils.getSearchQuery(_.filter(filterOptions, {'isVariableFilter': true}), ' AND ', variable.ignoreCase, options.skipEncode);
+            query = LiveVariableUtils.getSearchQuery(filter(filterOptions, {'isVariableFilter': true}), ' AND ', variable.ignoreCase, options.skipEncode);
             // Generate query for option filter fields. This has default logical operator as OR
-            optionsQuery = LiveVariableUtils.getSearchQuery(_.filter(filterOptions, {'isVariableFilter': undefined}), ' ' + (options.logicalOp || 'AND') + ' ', variable.ignoreCase, options.skipEncode);
+            optionsQuery = LiveVariableUtils.getSearchQuery(filter(filterOptions, {'isVariableFilter': undefined}), ' ' + (options.logicalOp || 'AND') + ' ', variable.ignoreCase, options.skipEncode);
             if (optionsQuery) {
                 // If both variable and option query are present, merge them with AND
                 query = query ? (query + ' AND ( ' + optionsQuery + ' )') : optionsQuery;
@@ -628,12 +629,12 @@ export class LiveVariableUtils {
             result;
         if (variable.propertiesMap) {
             columns = variable.propertiesMap.columns || [];
-            result = _.find(columns, obj => {
+            result = find(columns, obj => {
                 return obj.fieldName === fieldName;
             });
             // if related field name passed, get its type from columns inside the current field
             if (relatedField && result) {
-                result = _.find(result.columns, obj => {
+                result = find(result.columns, obj => {
                     return obj.fieldName === relatedField;
                 });
             }
@@ -645,12 +646,12 @@ export class LiveVariableUtils {
     // Prepare formData for blob columns
     static prepareFormData(variableDetails, rowObject) {
         const formData: any = new FormData();
-        formData.rowData = _.clone(rowObject);
-        _.forEach(rowObject, (colValue, colName) => {
+        formData.rowData = clone(rowObject);
+        forEach(rowObject, (colValue, colName) => {
             if (LiveVariableUtils.getFieldType(colName, variableDetails) === 'blob') {
-                if (_.isObject(colValue)) {
-                    if (_.isArray(colValue)) {
-                        _.forEach(colValue, fileObject => {
+                if (isObject(colValue)) {
+                    if (isArray(colValue)) {
+                        forEach(colValue, fileObject => {
                             formData.append(colName, fileObject, fileObject.name);
                         });
                     } else {
@@ -668,7 +669,7 @@ export class LiveVariableUtils {
 
     static traverseFilterExpressions(filterExpressions, traverseCallbackFn) {
         if (filterExpressions && filterExpressions.rules) {
-            _.forEach(filterExpressions.rules, (filExpObj, i) => {
+            forEach(filterExpressions.rules, (filExpObj, i) => {
                 if (filExpObj.rules) {
                     LiveVariableUtils.traverseFilterExpressions(filExpObj, traverseCallbackFn);
                 } else {
@@ -691,7 +692,7 @@ export class LiveVariableUtils {
         const traverseCallbackFn = (parentFilExpObj, filExpObj) => {
             if (filExpObj
                 && filExpObj.required
-                && ((_.indexOf(['null', 'isnotnull', 'empty', 'isnotempty', 'nullorempty'], filExpObj.matchMode) === -1) && filExpObj.value === '')) {
+                && ((indexOf(['null', 'isnotnull', 'empty', 'isnotempty', 'nullorempty'], filExpObj.matchMode) === -1) && filExpObj.value === '')) {
                 isRequiredFieldAbsent = true;
                 return false;
             }

@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import {isArray, get, isUndefined, isObject, findIndex, set, isBoolean, isEqual} from 'lodash-es';
 
 export default class DatasetUtil {
 
@@ -8,7 +8,7 @@ export default class DatasetUtil {
         }
 
         // check array type dataset for list type variable
-        if (isList && !_.isArray(dataSet)) {
+        if (isList && !isArray(dataSet)) {
             return false;
         }
 
@@ -46,26 +46,26 @@ export default class DatasetUtil {
      */
     private static getTargetNode(dataSet: any, options: any) {
         dataSet = options.parentIndex !== undefined ?  dataSet[options.parentIndex] : dataSet;
-        return _.get(dataSet, options.path);
+        return get(dataSet, options.path);
     }
 
     static setItem(dataSet: any, i: any, value: any, options?: any) {
         let index;
 
         // check param sanity
-        if (_.isUndefined(i) || !options.isList) {
+        if (isUndefined(i) || !options.isList) {
             return dataSet;
         }
 
-        if (_.isObject(i)) {
-            index = _.findIndex(dataSet, i);
+        if (isObject(i)) {
+            index = findIndex(dataSet, i);
         } else {
             index = i;
         }
 
         if (options.path) {
             const innerArray = DatasetUtil.getTargetNode(dataSet, options);
-            const innerElemindex = _.findIndex(innerArray, i);
+            const innerElemindex = findIndex(innerArray, i);
             if (innerElemindex > -1) {
               innerArray[innerElemindex] = value;
             }
@@ -82,7 +82,7 @@ export default class DatasetUtil {
 
     static addItem(dataSet: any, value: any, index: any, options?: any) {
         // check param sanity
-        if (_.isUndefined(value) || !options.isList) {
+        if (isUndefined(value) || !options.isList) {
             return dataSet;
         }
 
@@ -94,7 +94,7 @@ export default class DatasetUtil {
                 index = index !== undefined ? index : innerArray.length;
                 innerArray.splice(index, 0, value);
             } else {
-               options.parentIndex !== undefined ? _.set(dataSet[options.parentIndex], options.path, [value]) : _.set(dataSet, options.path, [value]);
+               options.parentIndex !== undefined ? set(dataSet[options.parentIndex], options.path, [value]) : set(dataSet, options.path, [value]);
             }
 
         } else {
@@ -121,24 +121,24 @@ export default class DatasetUtil {
         // check for index sanity
         i = i !== undefined ? i : dataSet.length - 1;
 
-        if (_.isBoolean(options)) {
+        if (isBoolean(options)) {
             exactMatch = options;
         }
-        if (_.isObject(options)) {
+        if (isObject(options)) {
             exactMatch = options.exactMatch;
         }
 
-        if (_.isObject(i)) {
+        if (isObject(i)) {
             if (options.path) {
                 const innerArray = DatasetUtil.getTargetNode(dataSet, options);
-                const innerElemindex = _.findIndex(innerArray, i);
-                if (innerElemindex > -1 && (!exactMatch || (exactMatch && _.isEqual(innerArray[innerElemindex], i)))) {
+                const innerElemindex = findIndex(innerArray, i);
+                if (innerElemindex > -1 && (!exactMatch || (exactMatch && isEqual(innerArray[innerElemindex], i)))) {
                     innerArray.splice(innerElemindex, 1);
                 }
             } else {
-                index = _.findIndex(dataSet, i);
+                index = findIndex(dataSet, i);
                 // When exactMatch property is set to true delete only when every property values are same*/
-                if (index > -1 && (!exactMatch || (exactMatch && _.isEqual(dataSet[index], i)))) {
+                if (index > -1 && (!exactMatch || (exactMatch && isEqual(dataSet[index], i)))) {
                     dataSet.splice(index, 1);
                 }
             }

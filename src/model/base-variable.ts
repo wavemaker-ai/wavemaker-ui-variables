@@ -11,7 +11,7 @@ import {
 } from "../util/variable/variables.utils";
 import {getClonedObject} from "../util/utils";
 import { EventNotifier, DefaultEventNotifier } from "../types/event-notifier";
-import _ from 'lodash';
+import {omit, isUndefined, includes, set, isObject, get, isArray, isNumber, isBoolean} from 'lodash-es';
 export enum VariableEvents {
     BEFORE_INVOKE = 'beforeInvoke',
     AFTER_INVOKE = 'afterInvoke'
@@ -55,13 +55,13 @@ export abstract class BaseVariable implements EventNotifier {
                 returnVal = this._context;
                 break;
             case DataSource.Operation.ADD_ITEM:
-                returnVal = this.addItem(options.item, _.omit(options, 'item'));
+                returnVal = this.addItem(options.item, omit(options, 'item'));
                 break;
             case DataSource.Operation.SET_ITEM:
-                returnVal = this.setItem(options.prevItem, options.item,  _.omit(options, 'prevItem', 'item'));
+                returnVal = this.setItem(options.prevItem, options.item,  omit(options, 'prevItem', 'item'));
                 break;
             case DataSource.Operation.REMOVE_ITEM:
-                returnVal = this.removeItem(options.item, _.omit(options, 'item'));
+                returnVal = this.removeItem(options.item, omit(options, 'item'));
                 break;
         }
         return returnVal;
@@ -76,11 +76,11 @@ export abstract class BaseVariable implements EventNotifier {
                 root = getTarget(this),
             targetObj = getTargetObj(obj, root, this),
             targetNodeKey = getTargetNodeKey(target);
-        if ((newVal === oldVal && _.isUndefined(newVal)) || (_.isUndefined(newVal) && (!_.isUndefined(oldVal) || !_.isUndefined(targetObj[targetNodeKey])))) {
+        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))) {
             return;
         }
         // Skip cloning for blob column
-        if (!_.includes(['blob', 'file'], obj.type)) {
+        if (!includes(['blob', 'file'], obj.type)) {
             newVal = getClonedObject(newVal);
         }
         setValueToNode(target, obj, root, this, newVal); // cloning newVal to keep the source clean
@@ -89,9 +89,9 @@ export abstract class BaseVariable implements EventNotifier {
             if (!internalBoundNodeMap.has(this)) {
                 internalBoundNodeMap.set(this, {});
             }
-            _.set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
+            set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
             /*update the internal nodes after internal node map is set*/
-            if (_.isObject(newVal)) {
+            if (isObject(newVal)) {
                 updateInternalNodes(target, root, this);
             }
         }
@@ -147,21 +147,21 @@ export abstract class BaseVariable implements EventNotifier {
             let targetNode;
             if (isList) {
                 parentIndex = options.parentIndex || 0;
-                targetNode =  _.get(this.dataSet[parentIndex], options.path);
+                targetNode =  get(this.dataSet[parentIndex], options.path);
             } else {
-                targetNode = _.get(this.dataSet, options.path);
+                targetNode = get(this.dataSet, options.path);
             }
-            isList = targetNode ? _.isArray(targetNode) ? true : false : true;
+            isList = targetNode ? isArray(targetNode) ? true : false : true;
         }
         return {path, isList, parentIndex};
     }
 
     addItem(value: any, options?: any) {
         let index;
-        if (_.isNumber(options)) {
+        if (isNumber(options)) {
             index = options;
         }
-        if (_.isObject(options)) {
+        if (isObject(options)) {
             index = options.index;
         }
 
@@ -172,17 +172,17 @@ export abstract class BaseVariable implements EventNotifier {
     removeItem(index: any, options?: any) {
         let exactMatch, parentIndex;
         if (options) {
-            if (_.isBoolean(options)) {
+            if (isBoolean(options)) {
                 exactMatch = options;
             }
-            if (_.isObject(options)) {
+            if (isObject(options)) {
                 exactMatch = options.exactMatch;
                 if (this.isList) {
                     parentIndex = options.parentIndex || 0;
                 }
             }
         }
-        return DatasetUtil.removeItem(this.dataSet, index, { exactMatch, path: _.get(options, 'path'), parentIndex });
+        return DatasetUtil.removeItem(this.dataSet, index, { exactMatch, path: get(options, 'path'), parentIndex });
     }
 
     clearData() {

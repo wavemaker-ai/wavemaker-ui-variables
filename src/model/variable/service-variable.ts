@@ -8,7 +8,7 @@ import { ServiceVariableManager } from '../../manager/variable/service-variable.
 import { ServiceVariableUtils } from '../../util/variable/service-variable.utils';
 import {HttpClientService} from "../../types/http-client.service";
 
-import _ from 'lodash';
+import {isEmpty} from 'lodash-es';
 
 const getManager = (): ServiceVariableManager => {
     return VariableManagerFactory.get(VARIABLE_CONSTANTS.CATEGORY.SERVICE);
@@ -113,7 +113,7 @@ export class ServiceVariable extends ApiAwareVariable implements IDataSource {
     }
 
     hasPagination() {
-        return this.controller === VARIABLE_CONSTANTS.CONTROLLER_TYPE.QUERY || !_.isEmpty(this.pagination);
+        return this.controller === VARIABLE_CONSTANTS.CONTROLLER_TYPE.QUERY || !isEmpty(this.pagination);
     }
 
     invoke(options?, success?, error?) {

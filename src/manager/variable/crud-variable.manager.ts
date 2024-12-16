@@ -9,7 +9,7 @@ import { getEvaluatedOrderBy, httpService, initiateCallback, metadataService, ge
 import { getAccessToken } from '../../util/oAuth.utils';
 import {ServiceVariableManager} from './service-variable.manager';
 
-import _ from 'lodash';
+import {get, isObject, forEach, merge, omit, isArray, includes, extend, isEmpty} from 'lodash-es';
 
 export class CrudVariableManager extends ServiceVariableManager {
 
@@ -24,7 +24,7 @@ export class CrudVariableManager extends ServiceVariableManager {
             options.operation = 'list';
         }
         const serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
-        let methodInfo = serviceDef === null ? null : _.get(serviceDef, 'wmServiceOperationInfo');
+        let methodInfo = serviceDef === null ? null : get(serviceDef, 'wmServiceOperationInfo');
         methodInfo = serviceDef.filter(function(item) {
             return options.operation === item.operationType;
         })[0];
@@ -91,7 +91,7 @@ export class CrudVariableManager extends ServiceVariableManager {
         if (!methodInfo || methodInfo.invalid) {
             return methodInfo;
         }
-        const securityDefnObj = _.get(methodInfo.securityDefinitions, '0'),
+        const securityDefnObj = get(methodInfo.securityDefinitions, '0'),
             isOAuthTypeService = securityDefnObj && (securityDefnObj.type === VARIABLE_CONSTANTS.REST_SERVICE.SECURITY_DEFN.OAUTH2);
         if (methodInfo.parameters) {
             methodInfo.parameters.forEach(function (param) {
@@ -148,7 +148,7 @@ export class CrudVariableManager extends ServiceVariableManager {
             triggerFn(error);
             return;
         }
-        if (_.isObject(output)) {
+        if (isObject(output)) {
             inputFields = output;
         }
         const opInfo = this.getOperationInfo(variable, options);
@@ -159,18 +159,18 @@ export class CrudVariableManager extends ServiceVariableManager {
             })[0];
         }
         // merge fields with bindings
-        const bindingFields = _.get(variable.dataBinding, options.operation) || {};
+        const bindingFields = get(variable.dataBinding, options.operation) || {};
         // bindings from setInput can come along with the body param, so employee.age will have to be converted to age
         if (bodyParam && bindingFields[bodyParam.name]) {
-            _.forEach(bindingFields, function(bindingFieldVal, bindingFieldKey) {
+            forEach(bindingFields, function(bindingFieldVal, bindingFieldKey) {
                 if (bindingFieldKey === bodyParam.name) {
-                    _.merge(inputFields, bindingFieldVal);
+                    merge(inputFields, bindingFieldVal);
                 } else {
                     inputFields[bindingFieldKey] = bindingFieldVal;
                 }
             });
         } else {
-            _.merge(inputFields, bindingFields);
+            merge(inputFields, bindingFields);
         }
         if ((options.operation === 'create' || options.operation === 'update') && (!bodyParam || !inputFields[bodyParam.name])) {
             let bodyTypeKeys = [], nonBodyParam;
@@ -183,7 +183,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                     bodyTypeKeys.push(fieldName);
                 }
             }
-            const reqBodyFields = _.omit(inputFields, bodyTypeKeys);
+            const reqBodyFields = omit(inputFields, bodyTypeKeys);
             if (bodyParam) {
                 inputFields[bodyParam.name] = getClonedObject(reqBodyFields);
             } else {
@@ -228,7 +228,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                 return Promise.resolve('');
             }
             const info = this.handleRequestMetaError(requestParams, variable, success, error, options);
-            const reason = (_.get(info, 'error.message') || 'An error occurred while triggering the variable');
+            const reason = (get(info, 'error.message') || 'An error occurred while triggering the variable');
             triggerFn(error);
             return Promise.reject(reason);
         }
@@ -242,7 +242,7 @@ export class CrudVariableManager extends ServiceVariableManager {
         }
 
         // file download
-        if (operationInfo && _.isArray(operationInfo.produces) && _.includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM)) {
+        if (operationInfo && isArray(operationInfo.produces) && includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM)) {
             // ToDo - variable seperation
             return variable.simulateFileDownload(requestParams, variable.dataBinding.file || variable.name, variable.dataBinding.exportType, function () {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
@@ -279,7 +279,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                     json = getClonedObject(pageable);
                     response.body = JSON.stringify(json);
                 }
-                const data = this.processSuccessResponse(response.body, variable, _.extend(options, {'xhrObj': response}), success, response.headers, operationInfo);
+                const data = this.processSuccessResponse(response.body, variable, extend(options, {'xhrObj': response}), success, response.headers, operationInfo);
                 // notify variable success
                 this.notifyInflight(variable, false, data);
                 resolve(response);
@@ -324,13 +324,13 @@ export class CrudVariableManager extends ServiceVariableManager {
     }
 
     public getInputParms(variable) {
-        const wmServiceOperationInfo = _.get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
-        return _.get(wmServiceOperationInfo, 'parameters');
+        const wmServiceOperationInfo = get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
+        return get(wmServiceOperationInfo, 'parameters');
     }
 
     public setInput(variable, key, val, options, type?) {
         type = type || 'list';
-        if (_.isEmpty(variable.dataBinding[type])) {
+        if (isEmpty(variable.dataBinding[type])) {
             variable.dataBinding[type] = {};
         }
         return setInput(variable.dataBinding[type], key, val, options);
@@ -388,7 +388,7 @@ export class CrudVariableManager extends ServiceVariableManager {
         let crudBindInfo = variable.dataBinding || {},
             flattenedBindInfo = [];
 
-        _.forEach(crudBindInfo, (bindNodes, operationType) => {
+        forEach(crudBindInfo, (bindNodes, operationType) => {
             bindNodes = bindNodes || [];
             bindNodes.forEach((bindNode)=>{
                 bindNode.target = operationType + '.' + bindNode.target;

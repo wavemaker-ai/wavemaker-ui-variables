@@ -1,6 +1,6 @@
 // @ts-ignore
 import X2JS from 'x2js';
-import _ from 'lodash';
+import {omit, isEqual, keys, isString, startsWith, includes, toLower, get, cloneDeep, isFunction} from 'lodash-es';
 export const DataType = {
     INTEGER : 'integer',
     BIG_INTEGER : 'big_integer',
@@ -58,7 +58,7 @@ const REGEX = {
     NO_QUOTES_ALLOWED: /^[^'|"]*$/,
     NO_DOUBLE_QUOTES_ALLOWED: /^[^"]*$/,
     VALID_HTML: /<[a-z][\s\S]*>/i,
-    VALID_PASSWORD: /^[0-9a-zA-Z-_.@&*!#$%]+$/,
+    VALID_PASSWORD: /^[0-9a-zA-Z-@&*!#$%]+$/,
     SPECIAL_CHARACTERS: /[^A-Z0-9a-z_]+/i,
     APP_SERVER_URL_FORMAT: /^(http[s]?:\/\/)(www\.){0,1}[a-zA-Z0-9\.\-]+([:]?[0-9]{2,5}|\.[a-zA-Z]{2,5}[\.]{0,1})\/+[^?#&=]+$/,
     JSON_DATE_FORMAT: /\d{4}-[0-1]\d-[0-3]\d(T[0-2]\d:[0-5]\d:[0-5]\d.\d{1,3}Z$)?/,
@@ -90,8 +90,8 @@ export const isPageable = (obj: any): boolean => {
         'totalPages': 1
     };
     // paginated object may or may not contain 'empty' property. In either case, Pageable should return as true.
-    const paginatedObj = _.omit(obj, 'empty');
-    return (_.isEqual(_.keys(pageable), _.keys(paginatedObj).sort()));
+    const paginatedObj = omit(obj, 'empty');
+    return (isEqual(keys(pageable), keys(paginatedObj).sort()));
 };
 
 export class IDGenerator {
@@ -112,12 +112,12 @@ export const hasCordova = () => {
 
 export const removeExtraSlashes = function (url) {
     const base64regex = /^data:image\/([a-z]{2,});base64,/;
-    if (_.isString(url)) {
+    if (isString(url)) {
         /*
         * support for mobile apps having local file path url starting with file:/// and
         * support for base64 format
         * */
-        if (_.startsWith(url, 'file:///') || base64regex.test(url)) {
+        if (startsWith(url, 'file:///') || base64regex.test(url)) {
             return url;
         }
         return url.replace(new RegExp('([^:]\/)(\/)+', 'g'), '$1');
@@ -147,10 +147,10 @@ export const extractType = (typeRef: string): string => {
 };
 /*Function to check if date time type*/
 export const isDateTimeType = (type: string) => {
-    if (_.includes(type, '.')) {
-        type = _.toLower(extractType(type));
+    if (includes(type, '.')) {
+        type = toLower(extractType(type));
     }
-    return _.includes([DataType.DATE, DataType.TIME, DataType.TIMESTAMP, DataType.DATETIME, DataType.LOCALDATETIME], type);
+    return includes([DataType.DATE, DataType.TIME, DataType.TIMESTAMP, DataType.DATETIME, DataType.LOCALDATETIME], type);
 };
 export const getValidJSON = (content: any) => {
     if (!content) {
@@ -173,11 +173,11 @@ export const xmlToJson = (xmlString: string) => {
         // in this case also, return null to denote conversion failure
         if (Object.keys(json).length === 0) {
             json = null;
-        } else if (_.get(json, 'html.body.parsererror')) {
+        } else if (get(json, 'html.body.parsererror')) {
             // for csv data, the response comes in an object
             json = null;
         } else {
-            json = _.get(json, Object.keys(json)[0]);
+            json = get(json, Object.keys(json)[0]);
         }
     }
     return json;
@@ -200,7 +200,7 @@ export const replace = (template: any, map: any, parseError?: boolean) => {
     }
 
     return template.replace(regEx, function (match: any, key: any) {
-        return _.get(map, key);
+        return get(map, key);
     });
 };
 /**
@@ -229,7 +229,7 @@ export const getBlob = (val: any, valContentType?: any) => {
  * @returns a clone of the passed object
  */
 export const getClonedObject = (object: any) => {
-    return _.cloneDeep(object);
+    return cloneDeep(object);
 };
 /**
  * this method checks if a given string starts with the given string
@@ -255,7 +255,7 @@ export function triggerFn(fn: any, ...argmnts: any) {
         args[start - 1] = arguments[start];
     }
 
-    if (_.isFunction(fn)) {
+    if (isFunction(fn)) {
         return fn.apply(null, args);
     }
 }
@@ -292,7 +292,7 @@ export const findValueOf = (obj: any, key: any, create?: any) => {
     }
 
     if (!create) {
-        return _.get(obj, key);
+        return get(obj, key);
     }
 
     const parts = key.split('.'),
