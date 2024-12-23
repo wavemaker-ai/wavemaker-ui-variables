@@ -47,11 +47,14 @@ async function createPackageLock(path) {
     await execa('npm', ['install', '--package-lock-only', '--ignore-scripts'], {
         'cwd': path
     });
-    const expoPackageJSON = fs.readJSONSync(`${path}/package-lock.json`);
-    Object.values(expoPackageJSON.packages || {}).map(v => {
+    const packageJSON = fs.readJSONSync(`${path}/package-lock.json`);
+    Object.values(packageJSON.packages || {}).map(v => {
         delete v.resolved;
     });
-    fs.writeJSONSync(`${path}/package-lock.json`, expoPackageJSON, {
+    fs.writeJSONSync(`${path}/package-lock.json`, packageJSON, {
+        spaces: 4
+    });
+    fs.writeJSONSync(`${path}/npm-shrinkwrap.json`, packageJSON, {
         spaces: 4
     });
 }
