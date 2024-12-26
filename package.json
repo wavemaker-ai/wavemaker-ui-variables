@@ -6,6 +6,7 @@
   "module": "index",
   "scripts": {
     "build": "tsc && webpack  --mode development && node ./scripts/build.js post-build",
+    "yalc-publish": "cd dist/es2015 && yalc publish --no-dev-mod --no-sig --push --content",
     "watch": "npm-watch build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
