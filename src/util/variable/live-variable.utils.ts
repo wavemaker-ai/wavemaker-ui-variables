@@ -4,7 +4,7 @@ import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
 // @ts-ignore
 import moment from 'moment';
-import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone} from 'lodash-es';
+import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone, replace as _replace} from 'lodash-es';
 
 export class LiveVariableUtils {
 
@@ -301,8 +301,7 @@ export class LiveVariableUtils {
     static encodeAndAddQuotes(value, type, skipEncode) {
         let encodedValue = skipEncode ? value : encodeURIComponent(value);
         type = toLower(type);
-        //@ts-ignore
-        encodedValue = replace(encodedValue, /'/g, '\'\'');
+        encodedValue = _replace(encodedValue, /'/g, '\'\'');
         // For number types, don't wrap the value in quotes
         if ((isNumberType(type) && type !== 'float')) {
             return encodedValue;
