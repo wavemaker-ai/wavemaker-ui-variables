@@ -4,7 +4,7 @@ import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
 // @ts-ignore
 import moment from 'moment';
-import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone, replace as _replace} from 'lodash-es';
+import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone, replace as _replace, isNaN} from 'lodash-es';
 
 export class LiveVariableUtils {
 
