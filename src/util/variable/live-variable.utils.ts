@@ -4,7 +4,7 @@ import { getEvaluatedOrderBy, formatDate } from './variables.utils';
 
 // @ts-ignore
 import moment from 'moment';
-import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone, replace as _replace, isNaN} from 'lodash-es';
+import {forEach, find, get, includes, map, filter, trim ,isEmpty, endsWith, join, toLower, isObject, isArray, toUpper, reduce, isString, each, isNil, remove, isNull, some ,indexOf, clone, replace as _replace, isNaN as _isNaN} from 'lodash-es';
 
 export class LiveVariableUtils {
 
@@ -229,7 +229,7 @@ export class LiveVariableUtils {
                     case 'integer':
                         fieldValue = isArray(fieldValue) ? reduce(fieldValue, (result, value) => {
                             value = parseInt(value, 10);
-                            if (!isNaN(value)) {
+                            if (!_isNaN(value)) {
                                 result.push(value);
                             }
                             return result;
@@ -373,7 +373,7 @@ export class LiveVariableUtils {
                 paramValue;
             // If value is an empty array, do not generate the query
             // If values is NaN and number type, do not generate query for this field
-            if ((isValArray && isEmpty(value)) || (!isValArray && isNaN(value) && (isNumberType(fieldValue.attributeType))) || (!isValArray && (isNaN(value) && !moment(value).isValid() && isDateTimeType(toLower(fieldValue.attributeType))))) {
+            if ((isValArray && isEmpty(value)) || (!isValArray && _isNaN(value) && (isNumberType(fieldValue.attributeType))) || (!isValArray && (_isNaN(value) && !moment(value).isValid() && isDateTimeType(toLower(fieldValue.attributeType))))) {
                 return;
             }
             if (isValArray) {
@@ -438,9 +438,9 @@ export class LiveVariableUtils {
         // If value is an empty array, do not generate the query
         // If values is NaN and number type, do not generate query for this field
         if ((isValArray && isEmpty(value)) ||
-            (isValArray && some(value, val => (isNull(val) || isNaN(val) || val === ''))) ||
-            (!isValArray && (isNaN(value) && (isNumberType(fieldValue.attributeType)))) ||
-            (!isValArray && (isNaN(value) && !moment(value).isValid() && isDateTimeType(toLower(fieldValue.attributeType))))) {
+            (isValArray && some(value, val => (isNull(val) || _isNaN(val) || val === ''))) ||
+            (!isValArray && (_isNaN(value) && (isNumberType(fieldValue.attributeType)))) ||
+            (!isValArray && (_isNaN(value) && !moment(value).isValid() && isDateTimeType(toLower(fieldValue.attributeType))))) {
             return;
         }
         if (isValArray) {
