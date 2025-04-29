@@ -218,7 +218,13 @@ export class PaginationUtils {
         }
         const paramName = paginationInfo.input[inputParam].split('.')[0]; 
         // check if paramName is present in parameters of operation info 
-        const paramObj = find(operationInfo.parameters, function(obj) { return obj.name === paramName }); 
+        const paramObj = find(operationInfo.parameters, function(obj) { 
+            if(obj.parameterType === 'body' && inputParam === 'page'){
+                return obj.sampleValue.hasOwnProperty(paramName)
+            }else{
+                return obj.name === paramName
+            }
+         }); 
         // set page/offset and size from pagination if matched parameter's type is header  
         if (paramObj?.parameterType === 'header') {
             const inputBodyParam =  VARIABLE_CONSTANTS.REST_SERVICE.PREFIX.CLOAK_HEADER_KEY + paginationInfo.input[inputParam];               
@@ -234,12 +240,18 @@ export class PaginationUtils {
         } else if (paramObj?.parameterType === 'body') { 
             // set page/offset and size from pagination if matched parameter's type is body 
             // assign bodyVal to updated pagination info object
-            const bodyVal = JSON.parse(paramObj.sampleValue);
-            const bodyParam = paginationInfo.input[inputParam].split('.')[1]
+            let bodyVal: any;
+            try {
+                bodyVal = typeof paramObj.sampleValue === 'string' ? JSON.parse(paramObj.sampleValue) : paramObj.sampleValue;
+              } catch (e) {
+                bodyVal = paramObj.sampleValue;
+              }
+            const bodyParam =  inputParam === 'page' ? paginationInfo.input[inputParam] : paginationInfo.input[inputParam].split('.')[1]
             if (bodyVal && bodyVal[bodyParam]) {
-                const inputBodyParam = paginationInfo.input[inputParam].split('.').splice(1).join('.');               
+                let inputBodyParam = paginationInfo.input[inputParam].split('.').splice(1).join('.');               
                 if (inputParam !== 'offset') { 
-                    set(reqObj, inputBodyParam, variable.pagination['page']);
+                    inputBodyParam = paginationInfo.input[inputParam];               
+                    set(reqObj, inputBodyParam, options.page ? options.page : 1);
                 } else {
                     set(reqObj, inputBodyParam, this.getOffsetInfo(variable, options));
                 }
@@ -342,7 +354,9 @@ export class PaginationUtils {
              */
             if (resOutput?.size) {
                 this.setPaginationItems(resOutput.size, response, res, 'size', resHeaders);
-            } else { 
+            } else if(paginationInfo.input?.size && paginationInfo.type === 'page'){
+                res['size'] = paginationInfo.input?.size
+            }else{ 
                 this.setParameterVal('size', res, operationInfo, variable);
             }
             /**
