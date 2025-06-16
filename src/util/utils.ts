@@ -1,6 +1,6 @@
 // @ts-ignore
-import X2JS from 'x2js';
 import {omit, isEqual, keys, isString, startsWith, includes, toLower, get, cloneDeep, isFunction} from 'lodash-es';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
 export const DataType = {
     INTEGER : 'integer',
     BIG_INTEGER : 'big_integer',
@@ -166,20 +166,22 @@ export const getValidJSON = (content: any) => {
     }
 };
 export const xmlToJson = (xmlString: string) => {
-    const x2jsObj = new X2JS({ 'emptyNodeForm': 'content', 'attributePrefix': '', 'enableToStringFunc': false });
-    let json = x2jsObj.xml2js(xmlString);
-    if (json) {
-        // in x2js version 3.4.4, for simple string, {} is returned.
-        // in this case also, return null to denote conversion failure
-        if (Object.keys(json).length === 0) {
-            json = null;
-        } else if (get(json, 'html.body.parsererror')) {
-            // for csv data, the response comes in an object
-            json = null;
-        } else {
-            json = get(json, Object.keys(json)[0]);
-        }
-    }
+    const xmlToJsonOptions = {
+        ignoreAttributes: false,
+        attributeNamePrefix: '',
+        allowBooleanAttributes: true,
+        parseTagValue: true, 
+    };
+
+    // XMLValidator will return true if the XML is valid, otherwise it will return an error object
+    const isValid = XMLValidator.validate(xmlString, xmlToJsonOptions);
+    if (isValid !== true) return null;
+
+    const xmlParserObj = new XMLParser(xmlToJsonOptions);
+    let json = xmlParserObj.parse(xmlString);
+
+    if(Object.keys(json).length === 0) return null;
+    if(json) json = get(json, Object.keys(json)[0]);
     return json;
 };
 /*
