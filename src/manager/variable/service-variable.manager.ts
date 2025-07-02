@@ -387,7 +387,7 @@ export class ServiceVariableManager extends BaseVariableManager {
                 /* supporting pagination for query service variable */
                 if (VARIABLE_CONSTANTS.PAGINATION_PARAMS.indexOf(param.name) !== -1) {
                     if (param.name === 'size') {
-                        param.sampleValue = options.size || param.sampleValue || parseInt(variable.maxResults, 10);
+                        param.sampleValue = options.size || param.sampleValue || variable._paginationConfig.input.size || parseInt(variable.maxResults, 10);
                     } else if (param.name === 'page') {
                         param.sampleValue = options.page || param.sampleValue || 1;
                     } else if (param.name === 'sort') {
