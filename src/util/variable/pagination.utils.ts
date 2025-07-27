@@ -355,7 +355,7 @@ export class PaginationUtils {
             if (resOutput?.size) {
                 this.setPaginationItems(resOutput.size, response, res, 'size', resHeaders);
             } else if(paginationInfo.input?.size && paginationInfo.type === 'page'){
-                res['size'] = paginationInfo.input?.size
+                res['size'] = Number(paginationInfo.input?.size) ?  paginationInfo.input?.size : get(response, paginationInfo.input?.size)   
             }else{ 
                 this.setParameterVal('size', res, operationInfo, variable);
             }
