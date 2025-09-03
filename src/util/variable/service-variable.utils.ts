@@ -304,6 +304,10 @@ export class ServiceVariableUtils {
                             bodyInfo = processRequestBody(paramValueInfo, params, variable);
                             requestBody = getFormData(getFormDataObj(), param, bodyInfo.requestBody);
                             requiredParamMissing = concat(requiredParamMissing, bodyInfo.missingParams);
+                        } else if(operationInfo?.consumes && operationInfo.consumes[0] === WS_CONSTANTS.CONTENT_TYPES.FORM_URL_ENCODED) {
+                            // when the content-type is 'application/x-www-form-urlencoded'
+                            requestBody = (requestBody && requestBody.length > 0 ? `${requestBody}&` : '') 
+                                + `${encodeURIComponent(param.name)}=${encodeURIComponent(param.sampleValue)}`;
                         } else {
                             requestBody = getFormData(getFormDataObj(), param, paramValue);
                         }
