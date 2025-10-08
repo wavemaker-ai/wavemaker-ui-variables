@@ -577,9 +577,9 @@ export class ServiceVariableManager extends BaseVariableManager {
             // });
             // the _observable property on variable is used store the observable using which the network call is made
             // this can be used to cancel the variable calls.
-            variable.httpService.sendCall(requestParams, variable).then((response) => {
+            variable.makeHttpCall(requestParams, inputFields, (response) => {
                 successHandler(response, resolve);
-            }).catch(err => {
+            }, err => {
                 err = err || {};
                 err.error = err.error || '{}';
                 const validJSON = getValidJSON(err.error);
