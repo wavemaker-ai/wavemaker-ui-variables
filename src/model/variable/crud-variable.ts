@@ -194,4 +194,8 @@ export class CrudVariable extends ApiAwareVariable implements IDataSource {
         getManager().initBinding(this);
         getManager().defineFirstLastRecord(this);
     }
+
+    makeHttpCall(requestParams: any, inputFields: any, successHandler: Function, errorHandler: Function) {
+        return this.httpService.sendCall(requestParams, this).then(successHandler).catch(errorHandler);
+    }
 }
