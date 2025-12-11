@@ -161,12 +161,22 @@ export class PaginationUtils {
             return;
         }
 
-        let inputParam;
+        let inputParam,sizeParam;
         // if pagination type is offset, asssign inputParam to offset else page
         if (paginationInfo.type === 'offset' || paginationInfo.input.offset) {
             inputParam = 'offset';
         } else {
             inputParam = 'page';
+        }
+        if(["page","offset","cursor"].includes(paginationInfo.type)) {
+            sizeParam = 'size';
+        }
+        if(sizeParam) {
+            const sizeParamName = paginationInfo.input[sizeParam].split('.')[0];
+            const sizeParamObj = find(operationInfo.parameters, function (obj) { return obj.name === sizeParamName; });
+            if (sizeParamObj && sizeParamObj.parameterType === 'query' && ["page","offset","cursor"].includes(paginationInfo.type)) {
+                variable.pagination['size'] = options['size'] || variable.pagination['size'];
+            }
         }
         const paramName = paginationInfo.input[inputParam].split('.')[0]; 
         const paramObj = find(operationInfo.parameters, function(obj) { return obj.name === paramName });   
@@ -182,6 +192,14 @@ export class PaginationUtils {
                 variable.pagination['page'] = this.getOffsetInfo(variable, options);
             }
             this.setPaginationQueryParams(variable, operationInfo, paginationInfo);  
+        } else if(paginationInfo.type === 'cursor') {
+            const sParam = (paginationInfo.input?.size && paginationInfo.input['size'].split('.')[0]) || "";
+            if(sParam) {
+                const sParamObj = find(operationInfo.parameters, function(obj) { return obj.name === sParam && obj.parameterType === 'path' });
+                if(sParamObj) {
+                    sParamObj.sampleValue = options['size'] || variable.pagination['size'] || sParamObj.sampleValue;
+                }
+            }
         }
     }
 
@@ -298,16 +316,25 @@ export class PaginationUtils {
              * For cursor type pagination, if pagination info is present in the query 
              * Based on whether user clicks on the next or prev button modify the url's query params
              */
+                const sizeParam =  paginationInfo.input['size'].split('.')[0];
+                const sizeObj = find(operationInfo.parameters, function(obj) { return obj.name === sizeParam });
                 const urlParams = url.split('?');
                 let invokeUrl;
                 if (variable.pagination.isNext) {
                     invokeUrl = variable.pagination.next.split('?');
-                } else {
+                } else if(variable.pagination.isPrev) {
                     invokeUrl = variable.pagination.prev.split('?');
                 }
-                urlParams[1] = invokeUrl[1];
-                url = urlParams.join('?');
-                resObj['url'] = url;
+                if(invokeUrl) {
+                    const queryParams = new URLSearchParams(invokeUrl[1]);
+                    if (sizeObj && sizeObj.sampleValue) {
+                        queryParams.set(sizeObj.name, sizeObj.sampleValue);
+                    }
+                    invokeUrl[1] = queryParams.toString();
+                    urlParams[1] = invokeUrl[1]
+                    url = urlParams.join('?');
+                    resObj['url'] = url;
+                }
             }
         }
         return resObj;   
@@ -321,11 +348,14 @@ export class PaginationUtils {
      * @param variable withholds variable information 
      * @returns {void} This method does not return anything
      */
-    static setParameterVal(paramName, res, operationInfo, variable) {
+    static setParameterVal(paramName, res, operationInfo, variable, options?) {
         const paginationInfo = this.getPaginationInfo(operationInfo, variable);
         const paginationParams =  paginationInfo.input[paramName].split('.');
         const param = paginationParams[0]; 
         const sizeObj = find(operationInfo.parameters, function(obj) { return obj.name === param });
+        if(paramName === 'size' && paginationInfo && (paginationInfo.type === 'offset' || paginationInfo.type === 'page') && options?.size && sizeObj?.sampleValue) {
+            sizeObj.sampleValue = options['size'] || result(sizeObj, 'sampleValue');
+        }
         res[paramName] = result(sizeObj, 'sampleValue');
         // if input value is configured from object, fetch the value from the specified path
         if (paginationParams.length > 1) {
@@ -354,10 +384,12 @@ export class PaginationUtils {
              */
             if (resOutput?.size) {
                 this.setPaginationItems(resOutput.size, response, res, 'size', resHeaders);
-            } else if(paginationInfo.input?.size && paginationInfo.type === 'page'){
-                res['size'] = Number(paginationInfo.input?.size) ?  paginationInfo.input?.size : get(response, paginationInfo.input?.size)   
             }else{ 
-                this.setParameterVal('size', res, operationInfo, variable);
+                this.setParameterVal('size', res, operationInfo, variable, options);
+            }
+            
+            if(!resOutput?.size && paginationInfo.input?.size && paginationInfo.type === 'page'){
+                res['size'] = (Number(paginationInfo.input?.size) ?  paginationInfo.input?.size : get(response, paginationInfo.input?.size)) || res['size'];
             }
             /**
              * If page is present in the pagination's output metadata deduce page from api's response
@@ -366,34 +398,9 @@ export class PaginationUtils {
             if (resOutput?.page) {
                 this.setPaginationItems(resOutput.page, response, res, 'page', resHeaders);
             } else if (paginationInfo.type !== 'offset') {
-                this.setParameterVal('page', res, operationInfo, variable);
+                this.setParameterVal('page', res, operationInfo, variable, options);
             }
-            /**
-             * If totalElements has $minValue in it, set totalElements as $minValue
-             * If the rendered elements are greater than $minValue, set totalElements as Number of elements rendered + 1
-             
-                * If totalElements is present in the pagination's output metadata deduce totalElements from api's response
-                
-                * If Pagination type is offset, deduce totalElements from size and options[page] else deduce from size and res[page]
-                */
-            if (startsWith(resOutput?.totalElements, '$minValue')) {
-                const totalEl = resOutput.totalElements.replace('$minValue=', '');
-                const pageParam = res['page'] ? res['page'] : options['page']
-                const elRendered = res['size'] * pageParam;
-                if (!variable.pagination || variable.pagination['totalElements'] > elRendered) {
-                    res['totalElements'] = parseInt(totalEl);
-                } else {
-                    res['totalElements'] = elRendered + 1;
-                }
-            } else if (resOutput?.totalElements) {
-                this.setPaginationItems(resOutput.totalElements, response, res, 'totalElements', resHeaders);
-            } else {
-                if (paginationInfo.type === 'offset' || paginationInfo.input.offset) {
-                    res['totalElements'] = (res['size'] * (options['page'] ? options['page'] : 1)) + 1;
-                } else {
-                    res['totalElements'] = (res['size'] * res['page']) + 1;
-                }
-            }
+            this.setTotalElements(resOutput,options,res,variable,response,paginationInfo,resHeaders);
             /**
              * If hasMoreItems is present in the pagination's output metadata deduce hasMoreItems from api's response
              * Else assign it as empty which will be calculated at pagination object generation
@@ -406,7 +413,38 @@ export class PaginationUtils {
         } else if (resOutput) { // For cursor type pagination set next and prev keys in res object
             this.setPaginationItems(resOutput.next, response, res, 'next', resHeaders);
             this.setPaginationItems(resOutput.prev, response, res, 'prev', resHeaders);
+            this.setPaginationItems(resOutput.size, response, res, 'size', resHeaders);
+            this.setParameterVal('page', res, operationInfo, variable, options);
+            this.setTotalElements(resOutput,options,res,variable,response,paginationInfo,resHeaders);
         }
         return res;
+    }
+    /**
+     * If totalElements has $minValue in it, set totalElements as $minValue
+     * If the rendered elements are greater than $minValue, set totalElements as Number of elements rendered + 1
+
+     * If totalElements is present in the pagination's output metadata deduce totalElements from api's response
+
+     * If Pagination type is offset, deduce totalElements from size and options[page] else deduce from size and res[page]
+     */
+    static setTotalElements(resOutput, options, res, variable, response, paginationInfo, resHeaders) {
+        if (startsWith(resOutput?.totalElements, '$minValue')) {
+            const totalEl = resOutput.totalElements.replace('$minValue=', '');
+            const pageParam = res['page'] ? res['page'] : options['page']
+            const elRendered = res['size'] * pageParam;
+            if (!variable.pagination || variable.pagination['totalElements'] > elRendered) {
+                res['totalElements'] = parseInt(totalEl);
+            } else {
+                res['totalElements'] = elRendered + 1;
+            }
+        } else if (resOutput?.totalElements) {
+            this.setPaginationItems(resOutput.totalElements, response, res, 'totalElements', resHeaders);
+        } else {
+            if (paginationInfo.type === 'offset' || paginationInfo.input.offset) {
+                res['totalElements'] = (res['size'] * (options['page'] ? options['page'] : 1)) + 1;
+            } else {
+                res['totalElements'] = (res['size'] * res['page']) + 1;
+            }
+        }
     }
 }
