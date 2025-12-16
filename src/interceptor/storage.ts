@@ -52,11 +52,11 @@ class SimpleStorageService implements StorageService {
                 await this.removeItem(key);
                 return null;
             }
+             // Update the last accessed time which helps in LRU eviction.
+             value.lastAccessedAt = Date.now();
         }
-        // Update the last accessed time which helps in LRU eviction.
-        value.lastAccessedAt = Date.now();
         this.cache[this.getKey(key)] = value;
-        return value;
+        return value?.value;
     }
 
     public async removeItem(key: string) {
@@ -106,7 +106,7 @@ export class SessionStorageService extends SimpleStorageService {
         if (currentCount < SessionStorageService.maxEntries) {
             return;
         }
-        SessionStorageService.cleanExpiredEntries();
+        SessionStorageService.cleanEntriesWithExpiredTTL();
         const countAfterCleanup = Object.keys(SessionStorageService.cache).length;
         if (countAfterCleanup < SessionStorageService.maxEntries) {
             return;
@@ -131,7 +131,7 @@ export class SessionStorageService extends SimpleStorageService {
     /**
      * The keys with expired TTL are removed from the cache.
      */
-    static cleanExpiredEntries(): number {
+    static cleanEntriesWithExpiredTTL(): number {
         const now = Date.now();
         let cleanedCount = 0;
         for (const key in SessionStorageService.cache) {
@@ -150,7 +150,7 @@ export class SessionStorageService extends SimpleStorageService {
             clearInterval(SessionStorageService.cleanupInterval);
         }
         SessionStorageService.cleanupInterval = setInterval(
-            SessionStorageService.cleanExpiredEntries,
+            SessionStorageService.cleanEntriesWithExpiredTTL,
             interval
         );
     }
