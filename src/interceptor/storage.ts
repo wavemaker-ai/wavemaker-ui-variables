@@ -46,17 +46,19 @@ class SimpleStorageService implements StorageService {
 
     public async getItem(key: string) {
         const value = this.cache[this.getKey(key)];
-        if (value) {
-            const ttl = value.ttl;
-            if (ttl && ttl < Date.now()) {
-                await this.removeItem(key);
-                return null;
-            }
-             // Update the last accessed time which helps in LRU eviction.
-             value.lastAccessedAt = Date.now();
+        if (!value) {
+            // Do not create placeholder entries for missing keys
+            return null;
         }
-        this.cache[this.getKey(key)] = value;
-        return value?.value;
+
+        const ttl = value.ttl;
+        if (ttl && ttl < Date.now()) {
+            await this.removeItem(key);
+            return null;
+        }
+        // Update the last accessed time which helps in LRU eviction.
+        value.lastAccessedAt = Date.now();
+        return value.value;
     }
 
     public async removeItem(key: string) {
@@ -147,7 +149,7 @@ export class SessionStorageService extends SimpleStorageService {
 
     static scheduleTTLCleanup(interval: number): void {
         if (SessionStorageService.cleanupInterval) {
-            clearInterval(SessionStorageService.cleanupInterval);
+            return;
         }
         SessionStorageService.cleanupInterval = setInterval(
             SessionStorageService.cleanEntriesWithExpiredTTL,
