@@ -25,7 +25,7 @@ export default class DatasetUtil {
 
     static setValue(dataSet: any, key: any, value: any, isList?: boolean) {
         // check param sanity
-        if (key && !isList) {
+        if (key && (!isList || !isArray(dataSet))) {
             dataSet[key] = value;
         }
 
@@ -53,7 +53,7 @@ export default class DatasetUtil {
         let index;
 
         // check param sanity
-        if (isUndefined(i) || !options.isList) {
+        if (isUndefined(i) || (!options.isList && !isArray(dataSet))) {
             return dataSet;
         }
 
@@ -82,7 +82,7 @@ export default class DatasetUtil {
 
     static addItem(dataSet: any, value: any, index: any, options?: any) {
         // check param sanity
-        if (isUndefined(value) || !options.isList) {
+        if (isUndefined(value) || (!options.isList && !isArray(dataSet))) {
             return dataSet;
         }
 
