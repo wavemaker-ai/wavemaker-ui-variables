@@ -521,8 +521,8 @@ export class ServiceVariableManager extends BaseVariableManager {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
                 $queue.process(variable);
                 triggerFn(success);
-            }, function () {
-                initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, null, null, null);
+            }, function (data) {
+                initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, data?getErrMessage(data, variable.httpService.getLocale()):null, null, null);
                 $queue.process(variable);
                 triggerFn(error);
             },variable.dataBinding);
