@@ -10,6 +10,8 @@ export * from './src/model/variable/live-variable';
 export * from './src/types/http-client.service';
 export * from './src/util/variable/live-variable.http.utils';
 export * from './src/util/variable/live-variable.utils';
+export * from './src/util/reactive-runtime';
+export * from './src/util/reactive-proxy';
 export * from './src/types/date-formatter';
 
 export const TEST: string = 'hello from variables';

@@ -12,6 +12,7 @@ import {
 import {getClonedObject} from "../util/utils";
 import { EventNotifier, DefaultEventNotifier } from "../types/event-notifier";
 import {omit, isUndefined, includes, set, isObject, get, isArray, isNumber, isBoolean} from 'lodash-es';
+import { wmSignal } from "../util/reactive-runtime";
 export enum VariableEvents {
     BEFORE_INVOKE = 'beforeInvoke',
     AFTER_INVOKE = 'afterInvoke'
@@ -33,6 +34,17 @@ export abstract class BaseVariable implements EventNotifier {
     params;
     paramProvider;
     private eventNotifier = new DefaultEventNotifier();
+    private __version__ = wmSignal(0);
+
+    touch() {
+        this.__version__.set(this.__version__.get() + 1);
+        console.log('touching variable', this.name);
+    }
+
+    track() {
+        this.__version__.get();
+        console.log('tracking variable', this.name);
+    }
 
     notify (event: string, args: any[]) {
         this.eventNotifier.notify(event, args);
@@ -99,25 +111,30 @@ export abstract class BaseVariable implements EventNotifier {
     }
 
     getData() {
+        this.track();
         return this.dataSet;
     }
 
     setData(dataSet: any) {
         if (DatasetUtil.isValidDataset(dataSet, this.isList)) {
             this.dataSet = dataSet;
+            this.touch();
         }
         return this.dataSet;
     }
 
     getValue(key: string, index: number) {
+        this.track();
         return DatasetUtil.getValue(this.dataSet, key, index, this.isList);
     }
 
     setValue(key: string, value: any) {
+        this.touch();
         return DatasetUtil.setValue(this.dataSet, key, value, this.isList);
     }
 
     getItem(index: number) {
+        this.track();
         return DatasetUtil.getItem(this.dataSet, index, this.isList);
     }
 
@@ -129,6 +146,7 @@ export abstract class BaseVariable implements EventNotifier {
      * @returns {any}
      */
     setItem(index: any, value: any, options?: any) {
+        this.touch();
         options = this.getChildDetails(options);
         return DatasetUtil.setItem(this.dataSet, index, value, options);
     }
@@ -157,6 +175,7 @@ export abstract class BaseVariable implements EventNotifier {
     }
 
     addItem(value: any, options?: any) {
+        this.touch();
         let index;
         if (isNumber(options)) {
             index = options;
@@ -170,6 +189,7 @@ export abstract class BaseVariable implements EventNotifier {
     }
 
     removeItem(index: any, options?: any) {
+        this.touch()
         let exactMatch, parentIndex;
         if (options) {
             if (isBoolean(options)) {
@@ -186,11 +206,13 @@ export abstract class BaseVariable implements EventNotifier {
     }
 
     clearData() {
+        this.touch();
         this.dataSet = DatasetUtil.getValidDataset(this.isList);
         return this.dataSet;
     }
 
     getCount() {
+        this.track();
         return DatasetUtil.getCount(this.dataSet, this.isList);
     }
 
