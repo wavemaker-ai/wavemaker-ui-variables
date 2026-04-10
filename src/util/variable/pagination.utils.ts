@@ -97,8 +97,30 @@ export class PaginationUtils {
             const headerKey = item.replace('$header.', '');
             const headers =  (<any>Object).fromEntries(resHeaders?.headers || resHeaders);
             const headerParams = headerKey.split('.');
+            const headerRootKey = headerParams[0].toLowerCase();
+            const cloakPrefix = VARIABLE_CONSTANTS.REST_SERVICE.PREFIX.CLOAK_HEADER_KEY.toLowerCase();
+            // Pagination metadata may provide header names with quotes (e.g. "X-Total-Count").
+            // Remove surrounding quotes before prefix checks / cloaked-key composition.
+            const unquotedHeaderRootKey = headerRootKey.replace(/^["']|["']$/g, '');
+            const cloakedHeaderLookupKey = cloakPrefix + unquotedHeaderRootKey;
+            const getHeaderExpr = (headerName: string) => {
+                // Normalize once so caller can pass bare names or pre-quoted names.
+                const normalizedHeaderName = headerName.replace(/^["']|["']$/g, '');
+                // Hyphenated header names are not valid bare identifiers in JMESPath.
+                if (/^[a-z_][a-z0-9_]*$/i.test(normalizedHeaderName)) {
+                    return normalizedHeaderName;
+                }
+                // Quote and escape to produce a valid JMESPath identifier for headers like x-wm-x-total-count.
+                return `"${normalizedHeaderName.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+            };
+            const headerRootExpr = getHeaderExpr(headerRootKey);
+            const cloakedHeaderRootExpr = getHeaderExpr(cloakedHeaderLookupKey);
             try {
-                res[key] = jmespath.search(headers, headerParams[0].toLowerCase());
+                res[key] = jmespath.search(headers, headerRootExpr);
+                // For proxied calls response headers may be cloaked as x-wm-<header-name>.
+                if (!res[key] && !unquotedHeaderRootKey.startsWith(cloakPrefix)) {
+                    res[key] = jmespath.search(headers, cloakedHeaderRootExpr);
+                }
             } catch {
                 console.warn(`${item} expression needs to be corrected as per JMES guidelines`);
             }
