@@ -65,7 +65,8 @@ export default class DatasetUtil {
 
         if (options.path) {
             const innerArray = DatasetUtil.getTargetNode(dataSet, options);
-            const innerElemindex = findIndex(innerArray, i);
+            // Fix for [WMS-31138]: If the "i" value is not an object, use it directly as the index
+            const innerElemindex = isObject(i) ? findIndex(innerArray, i) : i;
             if (innerElemindex > -1) {
               innerArray[innerElemindex] = value;
             }
