@@ -213,7 +213,7 @@ export const DB_CONSTANTS = {
         'IS_NOT_NULL'            : '${0} is not null',
         'EMPTY'                  : '${0}=\'\'',
         'IS_NOT_EMPTY'           : '${0}<>\'\'',
-        'NULL_OR_EMPTY'          : '${0} is null or ${0}=\'\''
+        'NULL_OR_EMPTY'          : '(${0} is null or ${0}=\'\')'
     },
     'DATABASE_STRING_MODES': ['LIKE', 'STARTING_WITH', 'STARTING_WITH_IGNORECASE', 'ENDING_WITH', 'ENDING_WITH_IGNORECASE', 'CONTAINING', 'CONTAINING_IGNORECASE', 'DOES_NOT_CONTAIN', 'DOES_NOT_CONTAIN_IGNORECASE', 'EQUALS', 'EQUALS_IGNORECASE', 'NOT_EQUALS', "NOT_EQUALS_IGNORECASE"]
 };
