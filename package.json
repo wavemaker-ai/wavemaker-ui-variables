@@ -10,9 +10,18 @@
     "watch": "npm-watch build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "exports": {
-    ".": "./dist/index.js",
-    "./src/*": "./src/*"
+  "exports":{
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./*": {
+      "import": "./*.js",
+      "require": "./*.js",
+      "types": "./*.d.ts"
+    },
+    "./package.json": "./package.json"
   },
   "author": "",
   "license": "ISC",
