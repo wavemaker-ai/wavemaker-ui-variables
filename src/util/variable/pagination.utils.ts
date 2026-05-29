@@ -1,6 +1,6 @@
 import { jmespath } from '@metrichor/jmespath';
 
-import {startsWith, find, set, result, get} from 'lodash-es';
+import {startsWith, find, set, result, get, isArray} from 'lodash-es';
 import { getValidJSON } from '../utils';
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 
@@ -125,7 +125,7 @@ export class PaginationUtils {
                 console.warn(`${item} expression needs to be corrected as per JMES guidelines`);
             }
             if (res[key]?.length) { 
-                let headerVal = res[key].join();
+                let headerVal = (isArray(res[key])) ? res[key].join() : res[key];
                 if (headerParams.length === 1) { 
                     /**
                      * If the headerParams has only 1 key (which is not an object) name assing headerVal to the res[key]
