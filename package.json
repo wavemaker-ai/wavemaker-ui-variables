@@ -12,14 +12,14 @@
   },
   "exports":{
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.js",
-      "require": "./index.js",
-      "types": "./index.d.ts"
+      "require": "./index.js"
     },
     "./*": {
+      "types": "./*.d.ts",
       "import": "./*.js",
-      "require": "./*.js",
-      "types": "./*.d.ts"
+      "require": "./*.js"
     },
     "./package.json": "./package.json"
   },
