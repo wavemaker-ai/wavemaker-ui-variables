@@ -21,6 +21,7 @@
       "import": "./*.js",
       "require": "./*.js"
     },
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "author": "",
