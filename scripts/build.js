@@ -33,6 +33,9 @@ async function postBuild(runtimeVersion) {
     });
     packageData.main = 'index';
     packageData.module = 'index';
+    packageData.exports = {
+        ".": "./index"
+    };
     delete packageData['files'];
 
     fs.writeFileSync(`${projectDir}/dist/es2015/package.json`, JSON.stringify(packageData, null, 2))
