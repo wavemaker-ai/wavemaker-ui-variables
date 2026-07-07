@@ -53,7 +53,7 @@ export default class DatasetUtil {
         let index;
 
         // check param sanity
-        if (isUndefined(i) || !options.isList) {
+        if (isUndefined(i) || (!options.isList &&!isArray(dataSet))) {
             return dataSet;
         }
 
@@ -83,7 +83,7 @@ export default class DatasetUtil {
 
     static addItem(dataSet: any, value: any, index: any, options?: any) {
         // check param sanity
-        if (isUndefined(value) || !options.isList) {
+        if (isUndefined(value) || (!options.isList &&!isArray(dataSet))) {
             return dataSet;
         }
 
