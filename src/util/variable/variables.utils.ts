@@ -363,7 +363,23 @@ export const setValueToNode = (target, obj, root, variable, value, noUpdate?) =>
     value = !isUndefined(value) ? value : obj.value;
     /* sanity check, user can bind parent nodes to non-object values, so child node bindings may fail */
     if (targetObj) {
-        targetObj[targetNodeKey] = value;
+        // Multi query params: one slot per binding; rebinds replace that slot (not append).
+        if (obj.collectionFormat === 'multi') {
+            let values = targetObj[targetNodeKey];
+            if (!isArray(values)) {
+                values = targetObj[targetNodeKey] = isUndefined(values) ? [] : [values];
+            }
+            let slot = obj.multiIndex !== undefined ? obj.multiIndex : obj.__multiSlotIndex;
+            if (slot === undefined) {
+                slot = obj.__multiSlotIndex = values.length;
+                values.push(value);
+            } else {
+                obj.__multiSlotIndex = slot;
+                values[slot] = value;
+            }
+        } else {
+            targetObj[targetNodeKey] = value;
+        }
     }
     processVariablePostBindUpdate(targetNodeKey, value, obj.type, variable, noUpdate);
 };
