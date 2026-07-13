@@ -20,6 +20,33 @@ const isBodyTypeQueryOrProcedure = (variable) => {
     return (includes(['QueryExecution', 'ProcedureExecution'], variable.controller)) && (includes(['put', 'post'], variable.operationType));
 };
 
+const appendQueryParam = (queryParams: string, paramName: string, paramValue: any) => {
+    // Preserve literal commas in values (e.g. "fire,ice", "20,2"). encodeURIComponent turns a
+    // comma into %2C, which breaks APIs that expect a raw comma. Commas are valid sub-delims in
+    // the query component per RFC 3986, so restore them after encoding the rest of the value.
+    const encodedValue = encodeURIComponent(paramValue).replace(/%2C/g, ',');
+    const pair = `${paramName}=${encodedValue}`;
+    return queryParams ? `${queryParams}&${pair}` : `?${pair}`;
+};
+
+/**
+ * Expands a query param value into the list of values to append to the URL, based on its
+ * collectionFormat:
+ *  - 'csv'   -> a single comma-joined value (type=a,b)
+ *  - 'multi' (or any array without csv) -> one value per array entry, appended as repeated
+ *             query keys by the caller (type=a&type=b)
+ *  - scalar values are returned as a single-element list
+ */
+const getQueryParamValues = (param: any, paramValue: any) => {
+    if (isArray(paramValue)) {
+        if (param.collectionFormat === 'csv') {
+            return [join(paramValue, ',')];
+        }
+        return paramValue;
+    }
+    return [paramValue];
+};
+
 /**
  * returns true if the variable is a Query service variable
  * @param {string} controller
@@ -272,11 +299,15 @@ export class ServiceVariableUtils {
                         if (isNull(paramValue) && isQueryServiceVar(variable.controller, variable.serviceType)) {
                             break;
                         }
-                        if (!queryParams) {
-                            queryParams = '?' + param.name + '=' + encodeURIComponent(paramValue);
-                        } else {
-                            queryParams += '&' + param.name + '=' + encodeURIComponent(paramValue);
-                        }
+                        /* A query param may resolve to multiple values (collectionFormat 'multi').
+                         * getQueryParamValues returns one entry per repeated key, so append each as
+                         * a separate name=value pair (type=a&type=b) instead of a single joined value. */
+                        getQueryParamValues(param, paramValue).forEach((queryValue) => {
+                            if (isNull(queryValue) && isQueryServiceVar(variable.controller, variable.serviceType)) {
+                                return;
+                            }
+                            queryParams = appendQueryParam(queryParams, param.name, queryValue);
+                        });
                         break;
                     case 'PATH':
                         /* replacing the path param based on the regular expression in the relative path */
