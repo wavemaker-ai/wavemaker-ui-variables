@@ -11,19 +11,29 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.js"
+    },
+    "./*": {
+      "types": "./*.d.ts",
+      "import": "./*.js",
+      "require": "./*.js"
+    },
+    "./package.json": "./package.json"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "execa": "^5.0.0",
     "fs-extra": "^11.1.0",
+    "tar": "6.1.0",
     "ts-loader": "^9.3.1",
     "typescript": "5.7.2",
     "webpack": "^5.73.0",
     "webpack-cli": "^4.10.0",
-    "yargs": "^16.2.0",
-    "tar": "^6.1.0"
+    "yargs": "16.2.0"
   },
   "dependencies": {
     "@metrichor/jmespath": "^0.3.1",
