@@ -17,9 +17,9 @@
       "require": "./index.js"
     },
     "./*": {
-      "types": "./*.d.ts",
-      "import": "./*.js",
-      "require": "./*.js"
+      "types": ["./*.d.ts", "./*/index.d.ts"],
+      "import": ["./*.js", "./*/index.js"],
+      "require": ["./*.js", "./*/index.js"]
     },
     "./package.json": "./package.json"
   },
