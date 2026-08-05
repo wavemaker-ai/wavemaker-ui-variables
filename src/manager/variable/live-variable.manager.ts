@@ -140,6 +140,10 @@ export class LiveVariableManager extends BaseVariableManager {
             }
         };
         const errorHandler = (error, reject) => {
+            if (this.isCanceledRequest(error)) {
+                reject(error);
+                return;
+            }
             const errMsg = getErrMessage(error, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
@@ -261,6 +265,10 @@ export class LiveVariableManager extends BaseVariableManager {
             }
         };
         getEntityError = (e: any, reject: any) => {
+            if (this.isCanceledRequest(e)) {
+                reject(e);
+                return;
+            }
             this.setVariableOptions(variable, options);
             this.handleError(variable, error, e.error, extend(options, {errorDetails: e.details}));
 
@@ -292,7 +300,7 @@ export class LiveVariableManager extends BaseVariableManager {
                     this.notifyInflight(variable, false, err);
                     return Promise.reject(err);
                 });
-        }, error);
+        }, reason => this.isCanceledRequest(reason) ? Promise.reject(reason) : error ? error(reason) : Promise.reject(reason));
     }
 
     private doCUD(action, variable, options, success, error) {
@@ -497,6 +505,10 @@ export class LiveVariableManager extends BaseVariableManager {
         };
 
         onCUDerror = (response: any, reject: any) => {
+            if (this.isCanceledRequest(response)) {
+                reject(response);
+                return;
+            }
             const errMsg = response.error;
             const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(response);
             // EVENT: ON_RESULT
@@ -512,11 +524,10 @@ export class LiveVariableManager extends BaseVariableManager {
             reject(errMsg);
         };
 
-        onCUDsuccess = (data: any, resolve: any) => {
+        onCUDsuccess = (data: any, resolve: any, reject: any) => {
             let response = data.body || data.data;
             const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(data);
 
-            $queue.process(variable);
             /* if error received on making call, call error callback */
             if (response && response.error) {
                 // EVENT: ON_RESULT
@@ -527,7 +538,8 @@ export class LiveVariableManager extends BaseVariableManager {
                 variable.canUpdate = true;
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.CAN_UPDATE, variable, response.error, advancedOptions);
                 triggerFn(error, response.error);
-                return Promise.reject(response.error);
+                reject(response.error);
+                return;
             }
 
             // EVENT: ON_RESULT
@@ -558,7 +570,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
         return new Promise((resolve, reject) => {
             this.makeCall(variable, action, dbOperations).then(data => {
-                onCUDsuccess(data, resolve);
+                onCUDsuccess(data, resolve, reject);
             }, response => {
                 onCUDerror(response, reject);
             });
@@ -589,7 +601,7 @@ export class LiveVariableManager extends BaseVariableManager {
             'data': options.aggregations
         };
         aggregateDataSuccess = (response: any, resolve: any) => {
-            if (response && response.type) {
+            if (response && (response.type || response.status)) {
                 if ((response && response.error) || !response) {
                     triggerFn(error, response.error);
                     return;
@@ -599,6 +611,10 @@ export class LiveVariableManager extends BaseVariableManager {
             }
         };
         aggregateDataError = (errorMsg: any, reject: any) => {
+            if (this.isCanceledRequest(errorMsg)) {
+                reject(errorMsg);
+                return;
+            }
             triggerFn(error, errorMsg);
             reject(errorMsg);
         };
@@ -639,7 +655,7 @@ export class LiveVariableManager extends BaseVariableManager {
                     this.notifyInflight(variable, false, err);
                     return Promise.reject(err);
                 });
-        }, error);
+        }, reason => this.isCanceledRequest(reason) ? Promise.reject(reason) : error ? error(reason) : Promise.reject(reason));
     }
 
     /**
@@ -794,13 +810,18 @@ export class LiveVariableManager extends BaseVariableManager {
             // 'filterMeta'    : tableOptions.filter
         };
         downloadSuccess = (response: any, resolve: any) => {
-            if (response && response.type) {
-                window.location.href = response.body.result;
+            if (response && (response.type || response.status)) {
+                const body = response.body || response.data;
+                window.location.href = body.result;
                 triggerFn(successHandler, response);
                 resolve(response);
             }
         };
         downloadError = (err: any, reject: any) => {
+            if (this.isCanceledRequest(err)) {
+                reject(err);
+                return;
+            }
             const opt: AdvancedOptions = this.prepareCallbackOptions(err.details);
             initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, err.error, opt);
             triggerFn(errorHandler, err.error);
@@ -922,6 +943,10 @@ export class LiveVariableManager extends BaseVariableManager {
             }
         };
         getRelatedTableDataError = (errMsg: any, reject: any) => {
+            if (this.isCanceledRequest(errMsg)) {
+                reject(errMsg);
+                return;
+            }
             triggerFn(error, errMsg);
             reject(errMsg);
         };
@@ -973,13 +998,13 @@ export class LiveVariableManager extends BaseVariableManager {
             'url': variable.getPrefabName() ? ($rootScope.project.deployedUrl + '/prefabs/' + variable.getPrefabName()) : $rootScope.project.deployedUrl
         };
         getDistinctDataByFieldsSuccess = (response: any, resolve: any) => {
-            if (response && response.type) {
+            if (response && (response.type || response.status)) {
                 if ((response && response.error) || !response) {
                     triggerFn(error, response.error);
                     return Promise.reject(response.error);
                 }
-                let result = response.body;
-                const pagination = Object.assign({}, response.body);
+                let result = response.body || response.data;
+                const pagination = Object.assign({}, result);
                 delete pagination.content;
 
                 result = {data: result.content, pagination};
@@ -988,6 +1013,10 @@ export class LiveVariableManager extends BaseVariableManager {
             }
         };
         getDistinctDataByFieldsError = (errorMsg: any, reject: any) => {
+            if (this.isCanceledRequest(errorMsg)) {
+                reject(errorMsg);
+                return;
+            }
             triggerFn(error, errorMsg);
             reject(errorMsg);
         };
@@ -995,8 +1024,8 @@ export class LiveVariableManager extends BaseVariableManager {
         return new Promise((resolve, reject) => {
             this.makeCall(variable, dbOperation, dbOperationOptions).then((response) => {
                 getDistinctDataByFieldsSuccess(response, resolve);
-            }, () => {
-                getDistinctDataByFieldsError(error, reject);
+            }, (err) => {
+                getDistinctDataByFieldsError(err, reject);
             });
         });
     }
@@ -1145,8 +1174,16 @@ export class LiveVariableManager extends BaseVariableManager {
     }
 
     public cancel(variable, options) {
-        if ($queue.requestsQueue.has(variable) && variable._observable) {
-            variable._observable.unsubscribe();
+        if ($queue.requestsQueue.has(variable)) {
+            if (variable.invokeHttp) {
+                variable.canUpdate = true;
+                $queue.cancel(variable);
+                this.notifyInflight(variable, false);
+                return;
+            }
+            if (variable._observable) {
+                variable._observable.unsubscribe();
+            }
             $queue.process(variable);
             // notify inflight variable
             this.notifyInflight(variable, false);

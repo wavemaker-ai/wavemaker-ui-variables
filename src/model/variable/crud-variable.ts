@@ -31,6 +31,7 @@ export class CrudVariable extends ApiAwareVariable implements IDataSource {
     simulateFileDownload;
     serviceInfo;
     httpService;
+    invokeHttp?: (requestParams: any, params: any) => Promise<any>;
 
     constructor(variable: any) {
         super();

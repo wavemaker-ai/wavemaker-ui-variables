@@ -24,7 +24,8 @@ export interface SVConfig {
     operationId: string,
     dataBinding: any;
     serviceInfo?: any,
-    httpClientService: HttpClientService
+    httpClientService: HttpClientService,
+    invokeHttp?: (requestParams: any, params: any) => Promise<any>
 }
 
 export class ServiceVariable extends ApiAwareVariable implements IDataSource {
@@ -38,6 +39,7 @@ export class ServiceVariable extends ApiAwareVariable implements IDataSource {
     simulateFileDownload;
     serviceInfo;
     httpService;
+    invokeHttp?: (requestParams: any, params: any) => Promise<any>;
 
     constructor(variable: SVConfig) {
         super();

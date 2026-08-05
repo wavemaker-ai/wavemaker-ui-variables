@@ -33,6 +33,17 @@ class InflightQueue {
         this.requestsQueue.delete(variable);
     }
 
+    /** Reject queued calls before clearing them so callers are never left pending. */
+    public cancel(variable: any) {
+        const cancellation = Object.assign(new Error('canceled'), {
+            name: 'CanceledError',
+            code: 'ERR_CANCELED'
+        });
+        const processes = this.requestsQueue.get(variable) || [];
+        processes.forEach(process => process.reject(cancellation));
+        this.clear(variable);
+    }
+
     /**
      * executes the n/w calls for a specified variable pushed in its respective queue (pushed while it was inFlight)
      * @param variable
@@ -61,10 +72,10 @@ class InflightQueue {
 
         switch (variable.inFlightBehavior) {
             case 'executeLast':
-                for (let i = 0; i < processes.length - 2; i++) {
+                for (let i = 1; i < processes.length - 1; i++) {
                     this.rejectProcess(processes[i]);
                 }
-                processes.splice(0, processes.length - 1);
+                this.requestsQueue.set(variable, [processes[processes.length - 1]]);
                 this.process(variable);
                 break;
             case 'executeAll':
@@ -76,7 +87,7 @@ class InflightQueue {
                 nextProcess.resolve();
                 break;
             default:
-                for (let i = 0; i < processes.length - 1; i++) {
+                for (let i = 1; i < processes.length; i++) {
                     this.rejectProcess(processes[i]);
                 }
                 this.clear(variable);

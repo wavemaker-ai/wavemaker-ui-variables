@@ -25,6 +25,7 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
     filterExpressions;
     httpService;
     dateFormatter;
+    invokeHttp?: (requestParams: any, params: any) => Promise<any>;
 
     constructor(variable: any) {
         super();

@@ -1,218 +1,240 @@
-import { DataSource } from '../types/types';
+import { DataSource } from "../types/types";
 
-import DatasetUtil from '../util/dataset-util';
+import DatasetUtil from "../util/dataset-util";
 import {
-    getTargetNodeKey,
-    getTargetObj,
-    getTarget,
-    setValueToNode,
-    internalBoundNodeMap,
-    updateInternalNodes
+  getTargetNodeKey,
+  getTargetObj,
+  getTarget,
+  setValueToNode,
+  internalBoundNodeMap,
+  updateInternalNodes,
 } from "../util/variable/variables.utils";
-import {getClonedObject} from "../util/utils";
+import { getClonedObject } from "../util/utils";
 import { EventNotifier, DefaultEventNotifier } from "../types/event-notifier";
-import {omit, isUndefined, includes, set, isObject, get, isArray, isNumber, isBoolean} from 'lodash-es';
+import {
+  omit,
+  isUndefined,
+  includes,
+  set,
+  isObject,
+  get,
+  isArray,
+  isNumber,
+  isBoolean,
+} from "lodash-es";
 export enum VariableEvents {
-    BEFORE_INVOKE = 'beforeInvoke',
-    AFTER_INVOKE = 'afterInvoke'
-};
+  BEFORE_INVOKE = "beforeInvoke",
+  AFTER_INVOKE = "afterInvoke",
+}
 export abstract class BaseVariable implements EventNotifier {
+  protected _id: string;
 
-    protected _id: string;
+  name: string;
+  owner: string;
+  category: string;
+  isList: boolean;
+  dataSet: any;
+  dataBinding: any;
+  inputFields: any;
+  filterFields: any;
+  _context: any;
+  isMuted = false;
+  params;
+  paramProvider;
+  private eventNotifier = new DefaultEventNotifier();
 
-    name: string;
-    owner: string;
-    category: string;
-    isList: boolean;
-    dataSet: any;
-    dataBinding: any;
-    inputFields: any;
-    filterFields: any;
-    _context: any;
-    isMuted = false;
-    params;
-    paramProvider;
-    private eventNotifier = new DefaultEventNotifier();
+  notify(event: string, args: any[]) {
+    this.eventNotifier.notify(event, args);
+  }
 
-    notify (event: string, args: any[]) {
-        this.eventNotifier.notify(event, args);
+  subscribe(event: string, fn: Function) {
+    return this.eventNotifier.subscribe(event, fn);
+  }
+
+  execute(operation: any, options: any) {
+    let returnVal;
+    switch (operation) {
+      case DataSource.Operation.GET_NAME:
+        returnVal = this.name;
+        break;
+      case DataSource.Operation.GET_UNIQUE_IDENTIFIER:
+        returnVal = this._id;
+        break;
+      case DataSource.Operation.GET_CONTEXT_IDENTIFIER:
+        returnVal = this._context;
+        break;
+      case DataSource.Operation.ADD_ITEM:
+        returnVal = this.addItem(options.item, omit(options, "item"));
+        break;
+      case DataSource.Operation.SET_ITEM:
+        returnVal = this.setItem(
+          options.prevItem,
+          options.item,
+          omit(options, "prevItem", "item"),
+        );
+        break;
+      case DataSource.Operation.REMOVE_ITEM:
+        returnVal = this.removeItem(options.item, omit(options, "item"));
+        break;
+    }
+    return returnVal;
+  }
+
+  invokeOnParamChange(obj?, newVal?, oldVal?) {
+    const runMode = true;
+    if (!obj) {
+      return;
+    }
+    const target = obj?.target,
+      root = getTarget(this),
+      targetObj = getTargetObj(obj, root, this),
+      targetNodeKey = getTargetNodeKey(target);
+    if (
+      (newVal === oldVal && isUndefined(newVal)) ||
+      (isUndefined(newVal) &&
+        (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))
+    ) {
+      return;
+    }
+    // Skip cloning for blob column
+    if (!includes(["blob", "file"], obj.type)) {
+      newVal = getClonedObject(newVal);
+    }
+    setValueToNode(target, obj, root, this, newVal); // cloning newVal to keep the source clean
+    if (runMode) {
+      /*set the internal bound node map with the latest updated value*/
+      if (!internalBoundNodeMap.has(this)) {
+        internalBoundNodeMap.set(this, {});
+      }
+      set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
+      /*update the internal nodes after internal node map is set*/
+      if (isObject(newVal)) {
+        updateInternalNodes(target, root, this);
+      }
+    }
+    return Promise.resolve(this);
+  }
+
+  getData() {
+    return this.dataSet;
+  }
+
+  setData(dataSet: any) {
+    if (DatasetUtil.isValidDataset(dataSet, this.isList)) {
+      this.dataSet = dataSet;
+    }
+    return this.dataSet;
+  }
+
+  getValue(key: string, index: number) {
+    return DatasetUtil.getValue(this.dataSet, key, index, this.isList);
+  }
+
+  setValue(key: string, value: any) {
+    return DatasetUtil.setValue(this.dataSet, key, value, this.isList);
+  }
+
+  getItem(index: number) {
+    return DatasetUtil.getItem(this.dataSet, index, this.isList);
+  }
+
+  /**
+   *
+   * @param index, a number in ideal case
+   *        it can be the object to be replaced by the passed value
+   * @param value
+   * @returns {any}
+   */
+  setItem(index: any, value: any, options?: any) {
+    options = this.getChildDetails(options);
+    return DatasetUtil.setItem(this.dataSet, index, value, options);
+  }
+
+  /**
+   * This method is to get target node options like path, parentIndex and isList
+   * @param options: provided options
+   * @returns {object}
+   * Example: if we have parent dataset as object and we are performing operations on inner list then we have to set isList as true.
+   * So finding the target node type and updating the isList option.
+   */
+  private getChildDetails(options: any) {
+    let parentIndex,
+      isList = this.isList,
+      path;
+    if (options && options.path) {
+      path = options.path;
+      let targetNode;
+      if (isList) {
+        parentIndex = options.parentIndex || 0;
+        targetNode = get(this.dataSet[parentIndex], options.path);
+      } else {
+        targetNode = get(this.dataSet, options.path);
+      }
+      isList = targetNode ? (isArray(targetNode) ? true : false) : true;
+    }
+    return { path, isList, parentIndex };
+  }
+
+  addItem(value: any, options?: any) {
+    let index;
+    if (isNumber(options)) {
+      index = options;
+    }
+    if (isObject(options)) {
+      index = options.index;
     }
 
-    subscribe (event: string, fn: Function) {
-        return this.eventNotifier.subscribe(event, fn);
-    }
+    options = this.getChildDetails(options);
+    return DatasetUtil.addItem(this.dataSet, value, index, options);
+  }
 
-    execute(operation: any, options: any) {
-        let returnVal;
-        switch (operation) {
-            case DataSource.Operation.GET_NAME:
-                returnVal = this.name;
-                break;
-            case DataSource.Operation.GET_UNIQUE_IDENTIFIER:
-                returnVal = this._id;
-                break;
-            case DataSource.Operation.GET_CONTEXT_IDENTIFIER:
-                returnVal = this._context;
-                break;
-            case DataSource.Operation.ADD_ITEM:
-                returnVal = this.addItem(options.item, omit(options, 'item'));
-                break;
-            case DataSource.Operation.SET_ITEM:
-                returnVal = this.setItem(options.prevItem, options.item,  omit(options, 'prevItem', 'item'));
-                break;
-            case DataSource.Operation.REMOVE_ITEM:
-                returnVal = this.removeItem(options.item, omit(options, 'item'));
-                break;
+  removeItem(index: any, options?: any) {
+    let exactMatch, parentIndex;
+    if (options) {
+      if (isBoolean(options)) {
+        exactMatch = options;
+      }
+      if (isObject(options)) {
+        exactMatch = options.exactMatch;
+        if (this.isList) {
+          parentIndex = options.parentIndex || 0;
         }
-        return returnVal;
+      }
     }
+    return DatasetUtil.removeItem(this.dataSet, index, {
+      exactMatch,
+      path: get(options, "path"),
+      parentIndex,
+    });
+  }
 
-    invokeOnParamChange(obj?, newVal?, oldVal?) {
-        const runMode = true;
-        if(!obj) {
-            return;
-        }
-        const target = obj?.target,
-                root = getTarget(this),
-            targetObj = getTargetObj(obj, root, this),
-            targetNodeKey = getTargetNodeKey(target);
-        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))) {
-            return;
-        }
-        // Skip cloning for blob column
-        if (!includes(['blob', 'file'], obj.type)) {
-            newVal = getClonedObject(newVal);
-        }
-        setValueToNode(target, obj, root, this, newVal); // cloning newVal to keep the source clean
-        if (runMode) {
-            /*set the internal bound node map with the latest updated value*/
-            if (!internalBoundNodeMap.has(this)) {
-                internalBoundNodeMap.set(this, {});
-            }
-            set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
-            /*update the internal nodes after internal node map is set*/
-            if (isObject(newVal)) {
-                updateInternalNodes(target, root, this);
-            }
-        }
-        return Promise.resolve(this);
-    }
+  clearData() {
+    this.dataSet = DatasetUtil.getValidDataset(this.isList);
+    return this.dataSet;
+  }
 
-    getData() {
-        return this.dataSet;
-    }
+  getCount() {
+    return DatasetUtil.getCount(this.dataSet, this.isList);
+  }
 
-    setData(dataSet: any) {
-        if (DatasetUtil.isValidDataset(dataSet, this.isList)) {
-            this.dataSet = dataSet;
-        }
-        return this.dataSet;
-    }
+  /**
+   * Return the prefab name if the variable is form a prefab
+   * @returns {string}
+   */
+  getPrefabName() {
+    const prefabname =
+      this._context && (this._context.prefabname || this._context.prefabName);
+    // __self__ is a prefab name given to a prefab which is run in preview mode
+    return prefabname !== "__self__" && prefabname;
+  }
 
-    getValue(key: string, index: number) {
-        return DatasetUtil.getValue(this.dataSet, key, index, this.isList);
-    }
+  mute() {
+    this.isMuted = true;
+  }
 
-    setValue(key: string, value: any) {
-        return DatasetUtil.setValue(this.dataSet, key, value, this.isList);
-    }
+  unmute() {
+    this.isMuted = false;
+  }
 
-    getItem(index: number) {
-        return DatasetUtil.getItem(this.dataSet, index, this.isList);
-    }
-
-    /**
-     *
-     * @param index, a number in ideal case
-     *        it can be the object to be replaced by the passed value
-     * @param value
-     * @returns {any}
-     */
-    setItem(index: any, value: any, options?: any) {
-        options = this.getChildDetails(options);
-        return DatasetUtil.setItem(this.dataSet, index, value, options);
-    }
-
-    /**
-     * This method is to get target node options like path, parentIndex and isList
-     * @param options: provided options
-     * @returns {object}
-     * Example: if we have parent dataset as object and we are performing operations on inner list then we have to set isList as true.
-     * So finding the target node type and updating the isList option.
-     */
-    private getChildDetails (options: any) {
-        let parentIndex, isList = this.isList, path;
-        if (options && options.path) {
-            path = options.path;
-            let targetNode;
-            if (isList) {
-                parentIndex = options.parentIndex || 0;
-                targetNode =  get(this.dataSet[parentIndex], options.path);
-            } else {
-                targetNode = get(this.dataSet, options.path);
-            }
-            isList = targetNode ? isArray(targetNode) ? true : false : true;
-        }
-        return {path, isList, parentIndex};
-    }
-
-    addItem(value: any, options?: any) {
-        let index;
-        if (isNumber(options)) {
-            index = options;
-        }
-        if (isObject(options)) {
-            index = options.index;
-        }
-
-        options = this.getChildDetails(options);
-        return DatasetUtil.addItem(this.dataSet, value, index, options);
-    }
-
-    removeItem(index: any, options?: any) {
-        let exactMatch, parentIndex;
-        if (options) {
-            if (isBoolean(options)) {
-                exactMatch = options;
-            }
-            if (isObject(options)) {
-                exactMatch = options.exactMatch;
-                if (this.isList) {
-                    parentIndex = options.parentIndex || 0;
-                }
-            }
-        }
-        return DatasetUtil.removeItem(this.dataSet, index, { exactMatch, path: get(options, 'path'), parentIndex });
-    }
-
-    clearData() {
-        this.dataSet = DatasetUtil.getValidDataset(this.isList);
-        return this.dataSet;
-    }
-
-    getCount() {
-        return DatasetUtil.getCount(this.dataSet, this.isList);
-    }
-
-    /**
-     * Return the prefab name if the variable is form a prefab
-     * @returns {string}
-     */
-    getPrefabName() {
-        const prefabname = this._context && (this._context.prefabname || this._context.prefabName);
-        // __self__ is a prefab name given to a prefab which is run in preview mode
-        return prefabname !== '__self__' && prefabname;
-    }
-
-    mute() {
-        this.isMuted = true;
-    }
-
-    unmute() {
-        this.isMuted = false;
-    }
-
-    destroy() {
-        
-    }
+  destroy() {}
 }

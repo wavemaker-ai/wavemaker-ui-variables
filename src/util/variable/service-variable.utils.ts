@@ -1,4 +1,4 @@
-import { extractType, isDefined, isDateTimeType, getBlob, replace } from "../../util/utils";
+import { extractType, hasCordova, isDefined, isDateTimeType, getBlob, replace } from "../../util/utils";
 
 import { $rootScope, CONSTANTS, SWAGGER_CONSTANTS, VARIABLE_CONSTANTS, WS_CONSTANTS } from '../../constants/variables.constants';
 import { isFileUploadSupported } from './variables.utils';
@@ -226,10 +226,9 @@ export class ServiceVariableUtils {
         operationInfo.proxySettings = operationInfo.proxySettings || {web: true, mobile: false};
         method = operationInfo.httpMethod || operationInfo.methodType;
         isProxyCall = (function () {
-            // ToDo - variable seperation
-            // if (CONSTANTS.hasCordova) {
+            if (hasCordova()) {
                 return operationInfo.proxySettings.mobile;
-            // }
+            }
             return operationInfo.proxySettings.web;
         }());
         withCredentials = operationInfo.proxySettings.withCredentials;

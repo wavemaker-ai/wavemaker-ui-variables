@@ -23,8 +23,9 @@ export class CrudVariableManager extends ServiceVariableManager {
         if (!options || !options.operation) {
             options.operation = 'list';
         }
-        const serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
-        let methodInfo = serviceDef === null ? null : get(serviceDef, 'wmServiceOperationInfo');
+        let serviceDef = !isEmpty(metadataService) && getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
+        serviceDef = serviceDef && serviceDef.length ? serviceDef : getClonedObject(variable.serviceInfo) || [];
+        let methodInfo;
         methodInfo = serviceDef.filter(function(item) {
             return options.operation === item.operationType;
         })[0];
@@ -64,19 +65,22 @@ export class CrudVariableManager extends ServiceVariableManager {
     }
 
     private getOperationInfo(variable, options) {
-        let serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
-        let methodInfo;
+        const runtimeServiceDef = (!isEmpty(metadataService) && getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()))) || [];
+        const generatedServiceDef = getClonedObject(variable.serviceInfo) || [];
         // fallback if there is no operation
         if (options && !options.operation) {
             options.operation = 'list';
         }
-        if (!serviceDef.length) {
+        if (!runtimeServiceDef.length && !generatedServiceDef.length) {
             return;
         }
-        methodInfo = serviceDef.filter(function(item) {
+        const runtimeMethod = runtimeServiceDef.filter(function(item) {
             return options.operation === item.operationType;
         })[0];
-        return methodInfo ? methodInfo.wmServiceOperationInfo : {invalid: true};
+        const generatedMethod = generatedServiceDef.filter(function(item) {
+            return options.operation === item.operationType;
+        })[0];
+        return runtimeMethod?.wmServiceOperationInfo || generatedMethod?.wmServiceOperationInfo || {invalid: true};
     }
     /**
      * gets the service operation info against a service variable
@@ -230,12 +234,14 @@ export class CrudVariableManager extends ServiceVariableManager {
             const info = this.handleRequestMetaError(requestParams, variable, success, error, options);
             const reason = (get(info, 'error.message') || 'An error occurred while triggering the variable');
             triggerFn(error);
+            $queue.process(variable);
             return Promise.reject(reason);
         }
+        const invokeParams = {...inputFields, operation: options.operation};
 
         // file upload
         if (ServiceVariableUtils.isFileUploadRequest(variable)) {
-            const uploadPromise = this.uploadFile(variable, options, success, error, inputFields, requestParams);
+            const uploadPromise = this.uploadFile(variable, options, success, error, invokeParams, requestParams);
             if (uploadPromise) {
                 return uploadPromise;
             }
@@ -243,6 +249,25 @@ export class CrudVariableManager extends ServiceVariableManager {
 
         // file download
         if (operationInfo && isArray(operationInfo.produces) && includes(operationInfo.produces, WS_CONSTANTS.CONTENT_TYPES.OCTET_STREAM)) {
+            if (variable.invokeHttp) {
+                requestParams.responseType = 'blob';
+                this.notifyInflight(variable, !options.skipToggleState);
+                return this.httpCall(requestParams, variable, invokeParams).then((response) => {
+                    this.notifyInflight(variable, false, response);
+                    initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
+                    $queue.process(variable);
+                    triggerFn(success, response);
+                    return response;
+                }, (err) => {
+                    this.notifyInflight(variable, false);
+                    $queue.process(variable);
+                    if (!this.isCanceledRequest(err)) {
+                        initiateCallback(VARIABLE_CONSTANTS.EVENT.ERROR, variable, null, null, null);
+                        triggerFn(error, err);
+                    }
+                    return Promise.reject(err);
+                });
+            }
             // ToDo - variable seperation
             return variable.simulateFileDownload(requestParams, variable.dataBinding.file || variable.name, variable.dataBinding.exportType, function () {
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.SUCCESS, variable, null, null, null);
@@ -259,7 +284,8 @@ export class CrudVariableManager extends ServiceVariableManager {
         this.notifyInflight(variable, !options.skipToggleState);
 
         successHandler = (response, resolve, inputObj?) => {
-            if (response && response.type) {
+            if (response && (response.type || response.status)) {
+                response.body = response.body || response.data;
                 if (variable.paginationTransformationRequired) {
                     let json = JSON.parse(response.body);
                     const pageable = {
@@ -287,6 +313,13 @@ export class CrudVariableManager extends ServiceVariableManager {
         };
 
         errorHandler = (err, reject) => {
+            if (this.isCanceledRequest(err)) {
+                this.notifyInflight(variable, false);
+                variable.canUpdate = true;
+                $queue.process(variable);
+                reject(err);
+                return;
+            }
             const errMsg = getErrMessage(err, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
@@ -300,7 +333,7 @@ export class CrudVariableManager extends ServiceVariableManager {
         // make the call and return a promise to the user to support script calls made by users
         return new Promise((resolve, reject) => {
             requestParams.responseType = 'text'; // this is to return text response. JSON & XML-to-JSON parsing is handled in success handler.
-            this.httpCall(requestParams, variable).then((response) => {
+            this.httpCall(requestParams, variable, invokeParams).then((response) => {
                 successHandler(response, resolve, inputFields);
             }, err => {
                 errorHandler(err, reject);
@@ -320,12 +353,14 @@ export class CrudVariableManager extends ServiceVariableManager {
         });
         options.operation = options.operation || 'list';
         options.inputFields = options.inputFields || getClonedObject(variable.dataBinding[options.operation]);
-        return $queue.submit(variable).then(this._invoke.bind(this, variable, options, success, error), error);
+        return $queue.submit(variable).then(
+            this._invoke.bind(this, variable, options, success, error),
+            reason => this.isCanceledRequest(reason) ? Promise.reject(reason) : error ? error(reason) : Promise.reject(reason)
+        );
     }
 
     public getInputParms(variable) {
-        const wmServiceOperationInfo = get(metadataService.getByOperationId(variable.operationId, variable.getPrefabName()), 'wmServiceOperationInfo');
-        return get(wmServiceOperationInfo, 'parameters');
+        return get(this.getOperationInfo(variable, {operation: 'list'}), 'parameters');
     }
 
     public setInput(variable, key, val, options, type?) {

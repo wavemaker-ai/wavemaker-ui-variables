@@ -112,8 +112,20 @@ function uploadWithAjax(file: any, variable: any, fd: any, url: any, options: an
     appendFileToFormData(file, cloneFD, options);
 
     const promise = new NotifyPromise((resolve: any, reject: any, notify: any) => {
-        // ToDo - variable seperation
-        variable.httpService.uploadFile(url, cloneFD, variable, {notify: notify}).then((data: any) => {
+        const request = variable.invokeHttp
+            ? variable.invokeHttp({
+                ...options.requestParams,
+                url,
+                data: cloneFD,
+                onUploadProgress: (event: any) => {
+                    if (event.total) {
+                        notify(Math.round(event.loaded * 100 / event.total));
+                    }
+                }
+            }, options.params)
+            : variable.httpService.uploadFile(url, cloneFD, variable, {notify: notify});
+        variable.request = request;
+        request.then((data: any) => {
            resolve(data);
         }, (error: any) => {
             reject(error);
@@ -163,7 +175,9 @@ function isMobileApp() {
  */
 export function upload(files: any, variable: any, fd: any, config: any, options?: any) {
     options = extend({
-        'paramName' : config.fileParamName
+        'paramName' : config.fileParamName,
+        'requestParams': config.requestParams,
+        'params': config.params
     }, options);
     return uploadWithAjax(files, variable, fd, config.url, options);
     // let fileTransfers = [],
