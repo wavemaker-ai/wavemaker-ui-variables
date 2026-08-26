@@ -1,7 +1,7 @@
 import { jmespath } from '@metrichor/jmespath';
 
 import {startsWith, find, set, result, get} from 'lodash-es';
-import { getValidJSON } from '../utils';
+import { getValidJSON, isDefined } from '../utils';
 import { VARIABLE_CONSTANTS } from '../../constants/variables.constants';
 
 export class PaginationUtils {
@@ -156,7 +156,7 @@ export class PaginationUtils {
     static checkPaginationAtQuery(operationInfo, variable, options) {        
         const paginationInfo = this.getPaginationInfo(operationInfo, variable);
         // If page is not first, pagination is present on the variable and paginationInfo's input meta has size set pagination in query params
-        const hasPagination = options && options['page'] && paginationInfo?.input.size && variable.pagination;    
+        const hasPagination = options && isDefined(options['page']) && paginationInfo?.input.size && variable.pagination;
         if (!hasPagination) {
             return;
         }

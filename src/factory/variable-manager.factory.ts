@@ -12,7 +12,7 @@ const managerMap = new Map(),
         'wm.ServiceVariable': ServiceVariableManager,
         'wm.LiveVariable': LiveVariableManager,
         'wm.CrudVariable': CrudVariableManager,
-        'wm.TimerVariable': TimerActionManager,
+        'wm.TimerAction': TimerActionManager,
     };
 
 export class VariableManagerFactory {
