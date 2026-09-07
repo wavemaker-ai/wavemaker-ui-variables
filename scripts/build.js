@@ -5,6 +5,7 @@ const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 const tar = require('tar');
 const execa = require('execa');
+const { WM_NPM_SCOPE } = require('../src/wm-namespace');
 
 async function updatePackageVersion(packagePath, key, version) {
     let content = fs.readFileSync(packagePath, 'utf8');
@@ -33,9 +34,6 @@ async function postBuild(runtimeVersion) {
     });
     packageData.main = 'index';
     packageData.module = 'index';
-    packageData.exports = {
-        ".": "./index"
-    };
     delete packageData['files'];
 
     fs.writeFileSync(`${projectDir}/dist/es2015/package.json`, JSON.stringify(packageData, null, 2))
@@ -60,7 +58,8 @@ async function createPackageLock(path) {
 }
 
 async function prepareNpmPackages(runtimeVersion) {
-    let tarballName=`wavemaker-variables-${runtimeVersion}.tgz`
+    const WM_NPM_SCOPE_SLUG = WM_NPM_SCOPE.replace(/^@/, '');
+    let tarballName=`${WM_NPM_SCOPE_SLUG}-variables-${runtimeVersion}.tgz`
     fs.copySync(`${projectDir}/dist/es2015`, `${projectDir}/dist/npm-packages/package`, {
         filter: p => !p.startsWith('/node_modules/')
     });
@@ -69,7 +68,7 @@ async function prepareNpmPackages(runtimeVersion) {
         'cwd': `${projectDir}`
     });
     let tarballPath = path.join(__dirname, `../dist/npm-packages/${tarballName}`)
-    const { stdout } = await execa('node', ['../process-npm-package-stats.js', `--path=${tarballPath}`, '--packageName=@wavemaker/variables', `--publishVersion=${runtimeVersion}`]);
+    const { stdout } = await execa('node', ['../process-npm-package-stats.js', `--path=${tarballPath}`, `--packageName=${WM_NPM_SCOPE}/variables`, `--publishVersion=${runtimeVersion}`]);
     console.log(stdout);
 }
 

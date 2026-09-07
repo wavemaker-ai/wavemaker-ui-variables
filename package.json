@@ -1,5 +1,5 @@
 {
-  "name": "@wavemaker/variables",
+  "name": "@wavemaker-ai/variables",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -11,26 +11,36 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.js"
+    },
+    "./*": {
+      "types": "./*.d.ts",
+      "import": "./*.js",
+      "require": "./*.js"
+    },
+    "./package.json": "./package.json"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "execa": "^5.0.0",
-    "fs-extra": "^11.1.0",
-    "ts-loader": "^9.3.1",
+    "execa": "5.1.1",
+    "fs-extra": "11.3.4",
+    "tar": "7.5.22",
+    "ts-loader": "9.5.4",
     "typescript": "5.7.2",
-    "webpack": "^5.73.0",
-    "webpack-cli": "^4.10.0",
-    "yargs": "^16.2.0",
-    "tar": "^6.1.0"
+    "webpack": "5.105.4",
+    "webpack-cli": "4.10.0",
+    "yargs": "16.2.0"
   },
   "dependencies": {
-    "@metrichor/jmespath": "^0.3.1",
-    "he": "^1.2.0",
-    "lodash-es": "^4.17.21",
-    "moment": "^2.29.4",
-    "x2js": "^3.4.3"
+    "@metrichor/jmespath": "0.3.1",
+    "he": "1.2.0",
+    "lodash-es": "4.18.1",
+    "moment": "2.30.1",
+    "x2js": "3.4.4"
   },
   "watch": {
     "build": {
