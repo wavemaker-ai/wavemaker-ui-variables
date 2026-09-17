@@ -79,11 +79,11 @@ export abstract class BaseAction {
      * @returns {any}
      */
     setItem(index: any, value: any) {
-        return DatasetUtil.setItem(this.dataSet, index, value);
+        return DatasetUtil.setItem(this.dataSet, index, value, {isList: false});
     }
 
     addItem(value: any, index: number) {
-        return DatasetUtil.addItem(this.dataSet, value, index);
+        return DatasetUtil.addItem(this.dataSet, value, index, {isList: false});
     }
 
     removeItem(index: any, exactMatch: boolean) {
