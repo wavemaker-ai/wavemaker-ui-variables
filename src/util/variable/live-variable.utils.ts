@@ -44,11 +44,11 @@ export class LiveVariableUtils {
         /*Old projects do not have primary fields. Get primary key from the columns*/
         const primaryKey = [];
         /*Loop through the propertiesMap and get the primary key column.*/
-        forEach(variable.propertiesMap.columns, (index, column) => {
+        forEach(variable.propertiesMap.columns, (column: any) => {
             if (column.isPrimaryKey) {
-                if (column.isRelated && (!includes(column.relatedFieldName, primaryKey))) {
+                if (column.isRelated && (!includes(primaryKey, column.relatedFieldName))) {
                     primaryKey.push(column.relatedFieldName);
-                } else if (!includes(column.fieldName, primaryKey)) {
+                } else if (!includes(primaryKey, column.fieldName)) {
                     primaryKey.push(column.fieldName);
                 }
             }

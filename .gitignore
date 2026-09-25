@@ -24,6 +24,7 @@ _dist/
 dist/
 node_modules/
 target/
+coverage/
 
 buildNumber.properties
 

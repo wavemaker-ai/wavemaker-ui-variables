@@ -216,7 +216,7 @@ export class LiveVariableManager extends BaseVariableManager {
             // 'filterMeta': tableOptions.filter,
             'url': variable.getPrefabName() ? ($rootScope.project.deployedUrl + '/prefabs/' + variable.getPrefabName()) : $rootScope.project.deployedUrl
         };
-        getEntitySuccess = (response: any, resolve: any) => {
+        getEntitySuccess = (response: any, resolve: any, reject: any) => {
             if (response && (response.type || response.status)) {
                 response = response.body || response.data;
                 dataObj.data = response.content;
@@ -225,7 +225,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
                 if ((response && response.error) || !response || !isArray(response.content)) {
                     this.handleError(variable, error, response.error, options, advancedOptions);
-                    return Promise.reject(response.error);
+                    return reject(response.error);
                 }
                 decodeData(response.content);
                 LiveVariableUtils.processBlobColumns(response.content, variable);
@@ -270,7 +270,7 @@ export class LiveVariableManager extends BaseVariableManager {
         /*Fetch the table data*/
         return new Promise((resolve, reject) => {
             this.makeCall(variable, dbOperation, dbOperationOptions).then((response) => {
-                getEntitySuccess(response, resolve);
+                getEntitySuccess(response, resolve, reject);
             }, err => {
                 getEntityError(err, reject);
             });
@@ -512,7 +512,7 @@ export class LiveVariableManager extends BaseVariableManager {
             reject(errMsg);
         };
 
-        onCUDsuccess = (data: any, resolve: any) => {
+        onCUDsuccess = (data: any, resolve: any, reject: any) => {
             let response = data.body || data.data;
             const advancedOptions: AdvancedOptions = this.prepareCallbackOptions(data);
 
@@ -527,7 +527,7 @@ export class LiveVariableManager extends BaseVariableManager {
                 variable.canUpdate = true;
                 initiateCallback(VARIABLE_CONSTANTS.EVENT.CAN_UPDATE, variable, response.error, advancedOptions);
                 triggerFn(error, response.error);
-                return Promise.reject(response.error);
+                return reject(response.error);
             }
 
             // EVENT: ON_RESULT
@@ -558,7 +558,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
         return new Promise((resolve, reject) => {
             this.makeCall(variable, action, dbOperations).then(data => {
-                onCUDsuccess(data, resolve);
+                onCUDsuccess(data, resolve, reject);
             }, response => {
                 onCUDerror(response, reject);
             });
@@ -583,7 +583,7 @@ export class LiveVariableManager extends BaseVariableManager {
             'dataModelName': variable.liveSource,
             'entityName': variable.type,
             'page': options.page || 1,
-            'size': options.size || variable.maxResults,
+            'size': options.size || variable.maxResults || 20,
             'sort': options.sort || '',
             'url': deployedUrl,
             'data': options.aggregations

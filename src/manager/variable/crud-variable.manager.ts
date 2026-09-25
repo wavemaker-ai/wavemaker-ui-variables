@@ -103,7 +103,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                 /* supporting pagination for query service variable */
                 if (VARIABLE_CONSTANTS.PAGINATION_PARAMS.indexOf(param.name) !== -1) {
                     if (param.name === 'size') {
-                        param.sampleValue = options.size || param.sampleValue || parseInt(variable.maxResults, 10);
+                        param.sampleValue = options.size || param.sampleValue || parseInt(variable.maxResults, 10) || 20;
                     } else if (param.name === 'page') {
                         param.sampleValue = options.page || param.sampleValue || 1;
                     } else if (param.name === 'sort') {
@@ -282,6 +282,12 @@ export class CrudVariableManager extends ServiceVariableManager {
                 const data = this.processSuccessResponse(response.body, variable, extend(options, {'xhrObj': response}), success, response.headers, operationInfo);
                 // notify variable success
                 this.notifyInflight(variable, false, data);
+                // Release the next queued invoke() call for this variable, same as every other
+                // completion path in this manager (BEFORE_UPDATE abort, metadata error, file
+                // upload/download) and the equivalent success/error handlers in
+                // live-variable.manager.ts's performCUD/listRecords. Without this, a second
+                // invoke() queued behind this one (default inFlightBehavior) never settles.
+                $queue.process(variable);
                 resolve(response);
             }
         };
@@ -290,6 +296,7 @@ export class CrudVariableManager extends ServiceVariableManager {
             const errMsg = getErrMessage(err, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
+            $queue.process(variable);
             this.processErrorResponse(variable, errMsg, error, err, options.skipNotification);
             reject({
                 error: errMsg,
