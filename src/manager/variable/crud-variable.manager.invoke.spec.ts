@@ -194,6 +194,16 @@ describe('CrudVariableManager - request flow', () => {
             expect(httpCall.mock.calls[0][0].url).toBe('http://host/api/users/7');
         });
 
+        it('copies the path parameter value out of the request body when updating', async () => {
+            useMetadata([operation('update', {
+                relativePath: '/api/users/{id}',
+                directPath: 'http://host/api/users/{id}',
+                parameters: [{ name: 'id', parameterType: 'path' }, { name: 'body', parameterType: 'body' }]
+            })]);
+            await run(variable(), { operation: 'update', row: { id: 5, name: 'x' } });
+            expect(httpCall.mock.calls[0][0].url).toBe('http://host/api/users/5');
+        });
+
         it('falls back to the data binding or input fields to delete', async () => {
             useMetadata([operation('delete', { relativePath: '/api/users/{id}', directPath: 'http://host/api/users/{id}', parameters: [{ name: 'id', parameterType: 'path' }] })]);
             await run(variable({ dataBinding: { id: 9 } }), { operation: 'delete' });

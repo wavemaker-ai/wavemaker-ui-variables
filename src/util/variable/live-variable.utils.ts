@@ -357,7 +357,7 @@ export class LiveVariableUtils {
                 param = LiveVariableUtils.wrapInLowerCase(param, options, ignoreCase);
                 break;
         }
-        return isDefined(param) ? param : '';
+        return param;
     }
 
     static getSearchQuery(filterOptions, operator, ignoreCase, skipEncode?) {
