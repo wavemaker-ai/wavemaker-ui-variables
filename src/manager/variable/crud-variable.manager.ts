@@ -189,8 +189,8 @@ export class CrudVariableManager extends ServiceVariableManager {
                 inputFields.RequestBody = getClonedObject(reqBodyFields);
             }
         }
-        // pagination metadata is only needed to transform responses of services that are not pageable out of the box
-        const paginationInfo = variable.paginationTransformationRequired ? this.getPaginationInfo(variable, inputFields, options) : undefined;
+        // pagination transformation is not implemented yet (getPaginationInfo has no metadata source)
+        let paginationInfo;
         const operationInfo = this.getMethodInfoForCrud(variable, inputFields, options);
         let pathParam, bodyTypeParam;
         if (!variable.paginationTransformationRequired && operationInfo && !operationInfo.invalid) {
