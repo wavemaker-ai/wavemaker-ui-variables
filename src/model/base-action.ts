@@ -34,10 +34,10 @@ export abstract class BaseAction {
 
     invokeOnParamChange(obj, newVal, oldVal) {
         const target = obj.target,
-            root = getTarget(this),
-            targetObj = getTargetObj(obj, root, this),
-            targetNodeKey = getTargetNodeKey(target);
-        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))) {
+            root = getTarget(this);
+        // resolving the target object also creates the intermediate nodes of the target path
+        getTargetObj(obj, root, this);
+        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && !isUndefined(oldVal))) {
             return;
         }
         // Skip cloning for blob column
@@ -79,11 +79,11 @@ export abstract class BaseAction {
      * @returns {any}
      */
     setItem(index: any, value: any) {
-        return DatasetUtil.setItem(this.dataSet, index, value);
+        return DatasetUtil.setItem(this.dataSet, index, value, {isList: false});
     }
 
     addItem(value: any, index: number) {
-        return DatasetUtil.addItem(this.dataSet, value, index);
+        return DatasetUtil.addItem(this.dataSet, value, index, {isList: false});
     }
 
     removeItem(index: any, exactMatch: boolean) {

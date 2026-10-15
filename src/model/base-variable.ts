@@ -68,15 +68,14 @@ export abstract class BaseVariable implements EventNotifier {
     }
 
     invokeOnParamChange(obj?, newVal?, oldVal?) {
-        const runMode = true;
         if(!obj) {
             return;
         }
-        const target = obj?.target,
-                root = getTarget(this),
-            targetObj = getTargetObj(obj, root, this),
-            targetNodeKey = getTargetNodeKey(target);
-        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))) {
+        const target = obj.target,
+            root = getTarget(this);
+        // resolving the target object also creates the intermediate nodes of the target path
+        getTargetObj(obj, root, this);
+        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && !isUndefined(oldVal))) {
             return;
         }
         // Skip cloning for blob column
@@ -84,16 +83,14 @@ export abstract class BaseVariable implements EventNotifier {
             newVal = getClonedObject(newVal);
         }
         setValueToNode(target, obj, root, this, newVal); // cloning newVal to keep the source clean
-        if (runMode) {
-            /*set the internal bound node map with the latest updated value*/
-            if (!internalBoundNodeMap.has(this)) {
-                internalBoundNodeMap.set(this, {});
-            }
-            set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
-            /*update the internal nodes after internal node map is set*/
-            if (isObject(newVal)) {
-                updateInternalNodes(target, root, this);
-            }
+        /*set the internal bound node map with the latest updated value*/
+        if (!internalBoundNodeMap.has(this)) {
+            internalBoundNodeMap.set(this, {});
+        }
+        set(internalBoundNodeMap.get(this), [this.name, root, target], newVal);
+        /*update the internal nodes after internal node map is set*/
+        if (isObject(newVal)) {
+            updateInternalNodes(target, root, this);
         }
         return Promise.resolve(this);
     }
