@@ -33,6 +33,16 @@ async function postBuild(runtimeVersion) {
     });
     packageData.main = 'index';
     packageData.module = 'index';
+    // A bare string export target ("./index") leaves TypeScript's "types" condition
+    // unresolved under moduleResolution: "bundler"/"node16"/"nodenext" -- consumers get
+    // TS2307 "Cannot find module" even though index.d.ts exists right next to index.js.
+    // Declare both conditions explicitly so type and runtime resolution both succeed.
+    packageData.exports = {
+        ".": {
+            "types": "./index.d.ts",
+            "default": "./index.js"
+        }
+    };
     delete packageData['files'];
 
     fs.writeFileSync(`${projectDir}/dist/es2015/package.json`, JSON.stringify(packageData, null, 2))
