@@ -20,7 +20,7 @@ const isBodyTypeQueryOrProcedure = (variable) => {
     return (includes(['QueryExecution', 'ProcedureExecution'], variable.controller)) && (includes(['put', 'post'], variable.operationType));
 };
 
-const appendQueryParam = (queryParams: string, paramName: string, paramValue: any, preEncoded = false) => {
+const appendQueryParam = (queryParams: string, paramName: string, paramValue: any, preEncoded: boolean) => {
     const encodedValue = preEncoded ? paramValue : encodeURIComponent(paramValue);
     const pair = `${paramName}=${encodedValue}`;
     return queryParams ? `${queryParams}&${pair}` : `?${pair}`;
@@ -251,13 +251,8 @@ export class ServiceVariableUtils {
 
         operationInfo.proxySettings = operationInfo.proxySettings || {web: true, mobile: false};
         method = operationInfo.httpMethod || operationInfo.methodType;
-        isProxyCall = (function () {
-            // ToDo - variable seperation
-            // if (CONSTANTS.hasCordova) {
-                return operationInfo.proxySettings.mobile;
-            // }
-            return operationInfo.proxySettings.web;
-        }());
+        // ToDo - variable seperation: the web setting is not used, proxying is decided by the mobile setting
+        isProxyCall = operationInfo.proxySettings.mobile;
         withCredentials = operationInfo.proxySettings.withCredentials;
         url = isProxyCall ? relativePath : directPath;
 
@@ -334,7 +329,7 @@ export class ServiceVariableUtils {
                             bodyInfo = processRequestBody(paramValueInfo, params, variable);
                             requestBody = getFormData(getFormDataObj(), param, bodyInfo.requestBody);
                             requiredParamMissing = concat(requiredParamMissing, bodyInfo.missingParams);
-                        } else if(operationInfo?.consumes && operationInfo.consumes[0] === WS_CONSTANTS.CONTENT_TYPES.FORM_URL_ENCODED) {
+                        } else if(operationInfo.consumes && operationInfo.consumes[0] === WS_CONSTANTS.CONTENT_TYPES.FORM_URL_ENCODED) {
                             // when the content-type is 'application/x-www-form-urlencoded'
                             requestBody = (requestBody && requestBody.length > 0 ? `${requestBody}&` : '') 
                                 + `${encodeURIComponent(param.name)}=${encodeURIComponent(param.sampleValue)}`;

@@ -5,8 +5,6 @@ import { httpService } from './variables.utils';
 
 import {isUndefined} from 'lodash-es';
 
-const isStudioMode = false;
-
 export const parseConfig = (serviceParams: any): any => {
 
     let val, param, config;
@@ -109,112 +107,14 @@ export const generateConnectionParams = (params, action) => {
 };
 
 const initiateAction = (action, params, successCallback?, failureCallback?, noproxy?) => {
-    let connectionParams,
-        urlParams,
-        requestData,
-        param,
-        val,
-        config,
-        headers,
-        httpDetails;
-
-    /*
-    config      = getClonedObject(config[action]);
-    headers     = config && config.headers;
-
-    requestData = params.data;
-
-    urlParams = {
-        projectID        : params.projectID,
-        service          : !isUndefined(params.service) ? params.service : 'services',
-        dataModelName    : params.dataModelName,
-        entityName       : params.entityName,
-        queryName        : params.queryName,
-        queryParams      : params.queryParams,
-        procedureName    : params.procedureName,
-        procedureParams  : params.procedureParams,
-        id               : params.id,
-        relatedFieldName : params.relatedFieldName,
-        page             : params.page,
-        size             : params.size,
-        sort             : params.sort
-    };
-    */
-    if (params.url && isStudioMode && !noproxy) {
-/*
-        /!* Check for url parameters to replace the URL.
-         * So the variable parameters in the URL will be replaced by the actual parameter values.*!/
-        if (urlParams) {
-            for (param in urlParams) {
-                if (urlParams.hasOwnProperty(param)) {
-                    val = urlParams[param];
-                    if (!isUndefined(val) && val !== null) {
-                        config.url = config.url.replace(new RegExp(':' + param, 'g'), val);
-                    }
-                }
-            }
-        }
-        headers = headers || {};
-        headers.skipSecurity = 'true';
-        headers['Content-Type'] = headers['Content-Type'] || 'application/json';
-        /!*(!$rootScope.preferences.workspace.loadXDomainAppDataUsingProxy is added in endpointAddress to differentiate desktop from saas*!/
-        if (action === 'testRunQuery') {
-            headers['Content-Type'] = undefined;
-            httpDetails = {
-                'endpointAddress'   : $window.location.protocol + (!$rootScope.preferences.workspace.loadXDomainAppDataUsingProxy ? ('//' + $window.location.host) : '') + params.url + config.url,
-                'method'            : config.method,
-                'content-Type'      : 'multipart/form-data',
-                'headers'           : headers
-            };
-            requestData.append(SWAGGER_CONSTANTS.WM_HTTP_JSON, new Blob([JSON.stringify(httpDetails)], {
-                type: 'application/json'
-            }));
-            connectionParams = {
-                'data': requestData,
-                'headers': headers,
-                'urlParams'         : {
-                    projectID: $rootScope.project.id
-                }
-            };
-        } else {
-            connectionParams = {
-                'data': {
-                    'endpointAddress'   : $window.location.protocol + (!$rootScope.preferences.workspace.loadXDomainAppDataUsingProxy ? ('//' + $window.location.host) : '') + params.url + config.url,
-                    'method'            : config.method,
-                    'requestBody'       : JSON.stringify(requestData),
-                    'headers'           : headers
-                },
-                'urlParams'         : {
-                    projectID: $rootScope.project.id
-                }
-            };
-        }
-        WebService.testRestService(connectionParams, function (response) {
-            var parsedData = getValidJSON(response.responseBody),
-                errMsg,
-                localeObject;
-            if (parsedData.hasOwnProperty('result')) {
-                triggerFn(successCallback, parsedData.result);
-            } else if (parsedData.hasOwnProperty('error')) {
-                triggerFn(failureCallback, (parsedData.error && parsedData.error.message) || parsedData.error);
-            } else if (parsedData.hasOwnProperty('errorDetails')) {
-                localeObject = $rootScope.locale || $rootScope.appLocale;
-                errMsg = getClonedObject(localeObject[parsedData.errorDetails.code]);
-                triggerFn(failureCallback, replace(errMsg, parsedData.errorDetails.data) || parsedData.errorDetails);
-            } else {
-                triggerFn(successCallback, parsedData);
-            }
-        }, failureCallback);*/
-    } else {
-        connectionParams = generateConnectionParams(params, action);
-        params.operation = action;
-        return httpService.sendCallAsObservable({
-            url: connectionParams.url,
-            method: connectionParams.method,
-            data: connectionParams.data,
-            headers: connectionParams.headers
-        }, params);
-    }
+    const connectionParams = generateConnectionParams(params, action);
+    params.operation = action;
+    return httpService.sendCallAsObservable({
+        url: connectionParams.url,
+        method: connectionParams.method,
+        data: connectionParams.data,
+        headers: connectionParams.headers
+    }, params);
 };
 
 export const LVService = {

@@ -298,14 +298,7 @@ export const findValueOf = (obj: any, key: any, create?: any) => {
     const parts = key.split('.'),
         keys: any = [];
 
-    let skipProcessing;
-
     parts.forEach((part: any) => {
-        if (!parts.length) { // if the part of a key is not valid, skip the processing.
-            skipProcessing = true;
-            return false;
-        }
-
         const subParts = part.match(/\w+/g);
         let subPart;
 
@@ -314,10 +307,6 @@ export const findValueOf = (obj: any, key: any, create?: any) => {
             keys.push({ 'key': subPart, 'value': subParts.length ? [] : {} }); // determine whether to create an array or an object
         }
     });
-
-    if (skipProcessing) {
-        return undefined;
-    }
 
     keys.forEach((_key: any) => {
         let tempObj = obj[_key.key];
