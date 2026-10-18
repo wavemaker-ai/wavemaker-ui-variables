@@ -12,7 +12,6 @@ import { generateConnectionParams } from '../../util/variable/live-variable.http
 import { VariableEvents } from "../../model/base-variable";
 
 declare const window;
-const emptyArr = [];
 import {noop, indexOf, isObject, omit, isArray, extend, forEach, join, isUndefined, isEmpty, find, map, filter, get, split, replace, cloneDeep, isNil} from 'lodash-es';
 
 export class LiveVariableManager extends BaseVariableManager {
@@ -74,7 +73,8 @@ export class LiveVariableManager extends BaseVariableManager {
 
         /* update the dataSet against the variable */
         if (!options.skipDataSetUpdate) {
-            this.updateDataset(variable, emptyArr, variable.propertiesMap, null);
+            // a fresh array per failure: updateDataset defines non-configurable accessors on the dataset it is given
+            this.updateDataset(variable, [], variable.propertiesMap, null);
         }
 
         //  EVENT: ON_ERROR
@@ -392,7 +392,7 @@ export class LiveVariableManager extends BaseVariableManager {
                 /*Construct the "requestData" based on whether the table associated with the live-variable has a composite key or not.*/
                 if (LiveVariableUtils.isCompositeKey(primaryKey)) {
                     if (LiveVariableUtils.isNoPrimaryKey(primaryKey)) {
-                        prevCompositeKeysData = prevData || options.rowData || rowObject;
+                        prevCompositeKeysData = prevData;
                         compositeKeysData = rowObject;
                     } else {
                         primaryKey.forEach(key => {
@@ -952,14 +952,13 @@ export class LiveVariableManager extends BaseVariableManager {
             getDistinctDataByFieldsError;
         options.skipEncode = true;
         options.operation = 'read';
-        options = options || {};
         tableOptions = LiveVariableUtils.prepareTableOptions(variable, options);
         if (tableOptions.query) {
             requestData.filter = tableOptions.query;
         }
         requestData.groupByFields = isArray(options.fields) ? options.fields : [options.fields];
         sort = options.sort || requestData.groupByFields[0] + ' asc';
-        sort = sort ? 'sort=' + sort : '';
+        sort = 'sort=' + sort;
         dbOperationOptions = {
             'projectID': projectID,
             'service': variable.getPrefabName() ? '' : 'services',
@@ -972,11 +971,11 @@ export class LiveVariableManager extends BaseVariableManager {
             'filter': LiveVariableUtils.getWhereClauseGenerator(variable, options),
             'url': variable.getPrefabName() ? ($rootScope.project.deployedUrl + '/prefabs/' + variable.getPrefabName()) : $rootScope.project.deployedUrl
         };
-        getDistinctDataByFieldsSuccess = (response: any, resolve: any) => {
+        getDistinctDataByFieldsSuccess = (response: any, resolve: any, reject: any) => {
             if (response && response.type) {
                 if ((response && response.error) || !response) {
                     triggerFn(error, response.error);
-                    return Promise.reject(response.error);
+                    return reject(response.error);
                 }
                 let result = response.body;
                 const pagination = Object.assign({}, response.body);
@@ -994,7 +993,7 @@ export class LiveVariableManager extends BaseVariableManager {
 
         return new Promise((resolve, reject) => {
             this.makeCall(variable, dbOperation, dbOperationOptions).then((response) => {
-                getDistinctDataByFieldsSuccess(response, resolve);
+                getDistinctDataByFieldsSuccess(response, resolve, reject);
             }, () => {
                 getDistinctDataByFieldsError(error, reject);
             });

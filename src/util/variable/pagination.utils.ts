@@ -66,7 +66,7 @@ export class PaginationUtils {
         if (response.next) {
             variable.pagination['next'] = response.next;
             variable.pagination['prev'] = response.prev;
-            variable.pagination['last'] = response.next ? false : true;
+            variable.pagination['last'] = false;
             variable.pagination['first'] = response.prev ? false : true;
         } else {
             variable.pagination['first'] = variable.pagination['page'] <= 1 ? true : false;
@@ -215,7 +215,7 @@ export class PaginationUtils {
             }
             this.setPaginationQueryParams(variable, operationInfo, paginationInfo);  
         } else if(paginationInfo.type === 'cursor') {
-            const sParam = (paginationInfo.input?.size && paginationInfo.input['size'].split('.')[0]) || "";
+            const sParam = (paginationInfo.input.size && paginationInfo.input['size'].split('.')[0]) || "";
             if(sParam) {
                 const sParamObj = find(operationInfo.parameters, function(obj) { return obj.name === sParam && obj.parameterType === 'path' });
                 if(sParamObj) {
@@ -376,7 +376,7 @@ export class PaginationUtils {
         const param = paginationParams[0]; 
         const sizeObj = find(operationInfo.parameters, function(obj) { return obj.name === param });
         if(paramName === 'size' && paginationInfo && (paginationInfo.type === 'offset' || paginationInfo.type === 'page') && options?.size && sizeObj?.sampleValue) {
-            sizeObj.sampleValue = options['size'] || result(sizeObj, 'sampleValue');
+            sizeObj.sampleValue = options['size'];
         }
         res[paramName] = result(sizeObj, 'sampleValue');
         // if input value is configured from object, fetch the value from the specified path
@@ -410,8 +410,8 @@ export class PaginationUtils {
                 this.setParameterVal('size', res, operationInfo, variable, options);
             }
             
-            if(!resOutput?.size && paginationInfo.input?.size && paginationInfo.type === 'page'){
-                res['size'] = (Number(paginationInfo.input?.size) ?  paginationInfo.input?.size : get(response, paginationInfo.input?.size)) || res['size'];
+            if(!resOutput?.size && paginationInfo.input.size && paginationInfo.type === 'page'){
+                res['size'] = (Number(paginationInfo.input.size) ?  paginationInfo.input.size : get(response, paginationInfo.input.size)) || res['size'];
             }
             /**
              * If page is present in the pagination's output metadata deduce page from api's response
@@ -432,7 +432,7 @@ export class PaginationUtils {
             } else {
                 res['hasMoreItems'] = '';
             }
-        } else if (resOutput) { // For cursor type pagination set next and prev keys in res object
+        } else { // For cursor type pagination set next and prev keys in res object
             this.setPaginationItems(resOutput.next, response, res, 'next', resHeaders);
             this.setPaginationItems(resOutput.prev, response, res, 'prev', resHeaders);
             this.setPaginationItems(resOutput.size, response, res, 'size', resHeaders);
