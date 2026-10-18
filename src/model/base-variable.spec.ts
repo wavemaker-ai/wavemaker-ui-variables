@@ -160,3 +160,130 @@ describe('BaseVariable', () => {
         });
     });
 });
+
+describe('BaseVariable - additional paths', () => {
+    let variable: any;
+
+    beforeEach(() => {
+        variable = new TestVariable();
+        variable.name = 'v';
+        variable.category = 'wm.Variable';
+        variable.isList = true;
+        variable.dataSet = [{ id: 1 }, { id: 2 }];
+    });
+
+    describe('execute', () => {
+        it('exposes name, id and context', () => {
+            variable._id = 'uid';
+            variable._context = { ctx: true };
+            expect(variable.execute(DataSource.Operation.GET_NAME, {})).toBe('v');
+            expect(variable.execute(DataSource.Operation.GET_UNIQUE_IDENTIFIER, {})).toBe('uid');
+            expect(variable.execute(DataSource.Operation.GET_CONTEXT_IDENTIFIER, {})).toEqual({ ctx: true });
+        });
+
+        it('adds, sets and removes items', () => {
+            variable.execute(DataSource.Operation.ADD_ITEM, { item: { id: 3 }, index: 0 });
+            expect(variable.dataSet[0]).toEqual({ id: 3 });
+            variable.execute(DataSource.Operation.SET_ITEM, { prevItem: 0, item: { id: 9 } });
+            expect(variable.dataSet[0]).toEqual({ id: 9 });
+            variable.execute(DataSource.Operation.REMOVE_ITEM, { item: 0 });
+            expect(variable.dataSet.length).toBe(2);
+        });
+
+        it('returns undefined for unknown operations', () => {
+            expect(variable.execute('unknown' as any, {})).toBeUndefined();
+        });
+    });
+
+    describe('invokeOnParamChange', () => {
+        it('ignores an unchanged undefined value and keeps existing values on a reset to undefined', () => {
+            variable.dataSet = {};
+            expect(variable.invokeOnParamChange({ target: 'a' }, undefined, undefined)).toBeUndefined();
+            variable.dataSet = { a: 'keep' };
+            expect(variable.invokeOnParamChange({ target: 'a' }, undefined, 'old')).toBeUndefined();
+        });
+
+        it('keeps blob values by reference', () => {
+            variable.dataSet = {};
+            const blob = { size: 1 };
+            return variable.invokeOnParamChange({ target: 'file', type: 'blob' }, blob, undefined).then(() => {
+                expect(variable.dataSet.file).toBe(blob);
+            });
+        });
+
+        it('clones other values', () => {
+            variable.dataSet = {};
+            const value = { a: 1 };
+            return variable.invokeOnParamChange({ target: 'x' }, value, undefined).then(() => {
+                expect(variable.dataSet.x).toEqual(value);
+                expect(variable.dataSet.x).not.toBe(value);
+            });
+        });
+    });
+
+    describe('dataset helpers', () => {
+        it('only accepts valid datasets', () => {
+            expect(variable.setData([{ id: 5 }])).toEqual([{ id: 5 }]);
+            expect(variable.setData('not valid')).toEqual([{ id: 5 }]);
+            expect(variable.getData()).toEqual([{ id: 5 }]);
+        });
+
+        it('reads and writes values and items', () => {
+            expect(variable.getValue('id', 1)).toBe(2);
+            variable.setValue('id', 7);
+            expect(variable.getItem(0)).toBeDefined();
+            expect(variable.getCount()).toBe(2);
+        });
+
+        it('adds items by numeric index or option object', () => {
+            variable.addItem({ id: 3 }, 1);
+            expect(variable.dataSet[1]).toEqual({ id: 3 });
+            variable.addItem({ id: 4 }, { index: 0 });
+            expect(variable.dataSet[0]).toEqual({ id: 4 });
+        });
+
+        it('adds items of an inner list through a path', () => {
+            variable.dataSet = [{ children: [{ n: 1 }] }];
+            variable.addItem({ n: 2 }, { path: 'children', parentIndex: 0 });
+            expect(variable.dataSet[0].children.length).toBe(2);
+        });
+
+        it('treats a missing inner node as a list and a single object parent as an object', () => {
+            variable.isList = false;
+            variable.dataSet = { child: { a: 1 } };
+            expect(variable.getChildDetails({ path: 'child' }).isList).toBe(false);
+            expect(variable.getChildDetails({ path: 'missing' }).isList).toBe(true);
+            variable.isList = true;
+            variable.dataSet = [{ child: [1] }];
+            expect(variable.getChildDetails({ path: 'child' })).toEqual({ path: 'child', isList: true, parentIndex: 0 });
+        });
+
+        it('removes items with an exact match flag or option', () => {
+            variable.dataSet = [{ id: 1 }, { id: 2 }];
+            variable.removeItem({ id: 1 }, true);
+            expect(variable.dataSet).toEqual([{ id: 2 }]);
+            variable.dataSet = [{ children: [{ n: 1 }, { n: 2 }] }];
+            variable.removeItem({ n: 1 }, { exactMatch: true, path: 'children', parentIndex: 0 });
+            expect(variable.dataSet[0].children).toEqual([{ n: 2 }]);
+            variable.removeItem(0);
+        });
+
+        it('clears the data', () => {
+            variable.clearData();
+            expect(variable.getCount()).toBe(0);
+        });
+    });
+
+    describe('getPrefabName', () => {
+        it('returns the prefab name unless the prefab runs in preview mode', () => {
+            variable._context = { prefabname: 'lib' };
+            expect(variable.getPrefabName()).toBe('lib');
+            variable._context = { prefabName: 'other' };
+            expect(variable.getPrefabName()).toBe('other');
+            variable._context = { prefabname: '__self__' };
+            expect(variable.getPrefabName()).toBe(false);
+            variable._context = undefined;
+            expect(variable.getPrefabName()).toBeFalsy();
+        });
+    });
+});

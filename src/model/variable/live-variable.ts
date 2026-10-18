@@ -249,7 +249,7 @@ export class LiveVariable extends ApiAwareVariable implements IDataSource {
                 // remove the existing databinding element
                 this.filterExpressions.rules = [];
                 // now add all the returned values
-                forEach(newVal, function (value, target) {
+                forEach(newVal, (value, target) => {
                     this.filterExpressions.rules.push({
                         'target': target,
                         'value': value,

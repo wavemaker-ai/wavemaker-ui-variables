@@ -34,10 +34,10 @@ export abstract class BaseAction {
 
     invokeOnParamChange(obj, newVal, oldVal) {
         const target = obj.target,
-            root = getTarget(this),
-            targetObj = getTargetObj(obj, root, this),
-            targetNodeKey = getTargetNodeKey(target);
-        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && (!isUndefined(oldVal) || !isUndefined(targetObj[targetNodeKey])))) {
+            root = getTarget(this);
+        // resolving the target object also creates the intermediate nodes of the target path
+        getTargetObj(obj, root, this);
+        if ((newVal === oldVal && isUndefined(newVal)) || (isUndefined(newVal) && !isUndefined(oldVal))) {
             return;
         }
         // Skip cloning for blob column

@@ -24,8 +24,7 @@ export class CrudVariableManager extends ServiceVariableManager {
             options.operation = 'list';
         }
         const serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
-        let methodInfo = serviceDef === null ? null : get(serviceDef, 'wmServiceOperationInfo');
-        methodInfo = serviceDef.filter(function(item) {
+        let methodInfo = serviceDef.filter(function(item) {
             return options.operation === item.operationType;
         })[0];
         if (!methodInfo) {
@@ -106,7 +105,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                         param.sampleValue = options.size || param.sampleValue || parseInt(variable.maxResults, 10) || 20;
                     } else if (param.name === 'page') {
                         param.sampleValue = options.page || param.sampleValue || 1;
-                    } else if (param.name === 'sort') {
+                    } else {
                         param.sampleValue = getEvaluatedOrderBy(variable.orderBy, options.orderBy) || param.sampleValue || '';
                     }
                 } else if (param.name === 'access_token' && isOAuthTypeService) {
@@ -190,6 +189,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                 inputFields.RequestBody = getClonedObject(reqBodyFields);
             }
         }
+        // pagination transformation is not implemented yet (getPaginationInfo has no metadata source)
         let paginationInfo;
         const operationInfo = this.getMethodInfoForCrud(variable, inputFields, options);
         let pathParam, bodyTypeParam;
@@ -260,7 +260,7 @@ export class CrudVariableManager extends ServiceVariableManager {
 
         successHandler = (response, resolve, inputObj?) => {
             if (response && response.type) {
-                if (variable.paginationTransformationRequired) {
+                if (variable.paginationTransformationRequired && paginationInfo) {
                     let json = JSON.parse(response.body);
                     const pageable = {
                         'content'         : json[paginationInfo.contentMapping],
