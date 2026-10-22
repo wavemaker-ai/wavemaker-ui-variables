@@ -3,7 +3,6 @@ const path = require('path');
 const projectDir = '.';
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
-const tar = require('tar');
 const execa = require('execa');
 
 async function updatePackageVersion(packagePath, key, version) {
