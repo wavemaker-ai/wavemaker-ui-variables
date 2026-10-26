@@ -387,10 +387,10 @@ export class ServiceVariableManager extends BaseVariableManager {
                 /* supporting pagination for query service variable */
                 if (VARIABLE_CONSTANTS.PAGINATION_PARAMS.indexOf(param.name) !== -1) {
                     if (param.name === 'size') {
-                        param.sampleValue = options.size || param.sampleValue || variable?._paginationConfig?.input?.size || parseInt(variable.maxResults, 10);
+                        param.sampleValue = options.size || param.sampleValue || variable._paginationConfig?.input?.size || parseInt(variable.maxResults, 10) || 20;
                     } else if (param.name === 'page') {
                         param.sampleValue = options.page || param.sampleValue || 1;
-                    } else if (param.name === 'sort') {
+                    } else {
                         param.sampleValue = getEvaluatedOrderBy(variable.orderBy, options.orderBy) || param.sampleValue || '';
                     }
                 } else if (param.name === 'access_token' && isOAuthTypeService) {
@@ -537,6 +537,12 @@ export class ServiceVariableManager extends BaseVariableManager {
                 const data = this.processSuccessResponse(res, variable, extend(options, {'xhrObj': response}), success, response.headers);
                 // notify variable success
                 this.notifyInflight(variable, false, data);
+                // Release the next queued invoke() call for this variable, same as every other
+                // completion path in this manager (BEFORE_UPDATE abort, metadata error, file
+                // upload/download) and the equivalent success/error handlers in
+                // live-variable.manager.ts's performCUD/listRecords. Without this, a second
+                // invoke() queued behind this one (default inFlightBehavior) never settles.
+                $queue.process(variable);
                 if (ServiceVariableUtils.isFileDeleteRequest(variable) && variable._deleteFileObservable) {
                     variable._deleteFileObservable.next({'status' : "success", response: res});
                     appManager && appManager.notifyApp(appManager.getAppLocale().MESSAGE_FILE_DELETE_SUCCESS || "File delete success", 'success');
@@ -549,6 +555,7 @@ export class ServiceVariableManager extends BaseVariableManager {
             const errMsg = getErrMessage(err, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
+            $queue.process(variable);
             this.processErrorResponse(variable, errMsg, error, err, options.skipNotification);
             if (ServiceVariableUtils.isFileDeleteRequest(variable) && variable._deleteFileObservable) {
                 variable._deleteFileObservable.error({

@@ -24,8 +24,7 @@ export class CrudVariableManager extends ServiceVariableManager {
             options.operation = 'list';
         }
         const serviceDef = getClonedObject(metadataService.getByCrudId(variable.crudOperationId, variable.getPrefabName()));
-        let methodInfo = serviceDef === null ? null : get(serviceDef, 'wmServiceOperationInfo');
-        methodInfo = serviceDef.filter(function(item) {
+        let methodInfo = serviceDef.filter(function(item) {
             return options.operation === item.operationType;
         })[0];
         if (!methodInfo) {
@@ -103,10 +102,10 @@ export class CrudVariableManager extends ServiceVariableManager {
                 /* supporting pagination for query service variable */
                 if (VARIABLE_CONSTANTS.PAGINATION_PARAMS.indexOf(param.name) !== -1) {
                     if (param.name === 'size') {
-                        param.sampleValue = options.size || param.sampleValue || parseInt(variable.maxResults, 10);
+                        param.sampleValue = options.size || param.sampleValue || parseInt(variable.maxResults, 10) || 20;
                     } else if (param.name === 'page') {
                         param.sampleValue = options.page || param.sampleValue || 1;
-                    } else if (param.name === 'sort') {
+                    } else {
                         param.sampleValue = getEvaluatedOrderBy(variable.orderBy, options.orderBy) || param.sampleValue || '';
                     }
                 } else if (param.name === 'access_token' && isOAuthTypeService) {
@@ -190,6 +189,7 @@ export class CrudVariableManager extends ServiceVariableManager {
                 inputFields.RequestBody = getClonedObject(reqBodyFields);
             }
         }
+        // pagination transformation is not implemented yet (getPaginationInfo has no metadata source)
         let paginationInfo;
         const operationInfo = this.getMethodInfoForCrud(variable, inputFields, options);
         let pathParam, bodyTypeParam;
@@ -260,7 +260,7 @@ export class CrudVariableManager extends ServiceVariableManager {
 
         successHandler = (response, resolve, inputObj?) => {
             if (response && response.type) {
-                if (variable.paginationTransformationRequired) {
+                if (variable.paginationTransformationRequired && paginationInfo) {
                     let json = JSON.parse(response.body);
                     const pageable = {
                         'content'         : json[paginationInfo.contentMapping],
@@ -282,6 +282,12 @@ export class CrudVariableManager extends ServiceVariableManager {
                 const data = this.processSuccessResponse(response.body, variable, extend(options, {'xhrObj': response}), success, response.headers, operationInfo);
                 // notify variable success
                 this.notifyInflight(variable, false, data);
+                // Release the next queued invoke() call for this variable, same as every other
+                // completion path in this manager (BEFORE_UPDATE abort, metadata error, file
+                // upload/download) and the equivalent success/error handlers in
+                // live-variable.manager.ts's performCUD/listRecords. Without this, a second
+                // invoke() queued behind this one (default inFlightBehavior) never settles.
+                $queue.process(variable);
                 resolve(response);
             }
         };
@@ -290,6 +296,7 @@ export class CrudVariableManager extends ServiceVariableManager {
             const errMsg = getErrMessage(err, variable.httpService.getLocale());
             // notify variable error
             this.notifyInflight(variable, false);
+            $queue.process(variable);
             this.processErrorResponse(variable, errMsg, error, err, options.skipNotification);
             reject({
                 error: errMsg,
