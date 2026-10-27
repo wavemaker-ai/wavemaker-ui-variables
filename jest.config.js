@@ -11,6 +11,8 @@ module.exports = {
     '/node_modules/(?!(lodash-es)/)',
   ],
   collectCoverage: true,
+  // report every source file, not only the ones a test happens to import
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/*.spec.ts', '!src/**/*.d.ts'],
   coverageDirectory: 'coverage',
   coveragePathIgnorePatterns: ['/node_modules/', '/scripts/', '\\.spec\\.ts$'],
 };
