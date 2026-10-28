@@ -23,6 +23,28 @@ function updateSourceMapFile(path) {
     }
 }
 
+// The "./*" and "./src/*" patterns only match files, so bundlers that honour package
+// exports (e.g. Metro) cannot resolve directory imports like "src/interceptor".
+// Add an explicit entry for every directory that ships an index.js.
+function getDirectoryExports(rootDir, dir = rootDir, entries = {}) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(entry => {
+        if (!entry.isDirectory() || entry.name === 'node_modules') {
+            return;
+        }
+        const dirPath = path.join(dir, entry.name);
+        if (fs.existsSync(path.join(dirPath, 'index.js'))) {
+            const subpath = `./${path.relative(rootDir, dirPath).split(path.sep).join('/')}`;
+            entries[subpath] = {
+                "types": `${subpath}/index.d.ts`,
+                "import": `${subpath}/index.js`,
+                "require": `${subpath}/index.js`
+            };
+        }
+        getDirectoryExports(rootDir, dirPath, entries);
+    });
+    return entries;
+}
+
 async function postBuild(runtimeVersion) {
 
   // updateSourceMapFile(`${projectDir}/dist/es2015`);
@@ -35,6 +57,10 @@ async function postBuild(runtimeVersion) {
     packageData.main = 'index';
     packageData.module = 'index';
     delete packageData['files'];
+    packageData.exports = {
+        ...getDirectoryExports(`${projectDir}/dist/es2015`),
+        ...packageData.exports
+    };
 
     fs.writeFileSync(`${projectDir}/dist/es2015/package.json`, JSON.stringify(packageData, null, 2))
     await updatePackageVersion(`${projectDir}/dist/es2015/package.json`, 'version', runtimeVersion);
